@@ -1,5 +1,6 @@
 /vendor/
 .phpcs-cache
+composer.lock
 .idea
 index.php
 Orm.php
