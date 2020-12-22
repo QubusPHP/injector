@@ -1,0 +1,19 @@
+dist: trusty
+
+language: php
+
+php:
+  - 7.4
+  - 8.0
+
+matrix:
+  include:
+    - php: 7.3
+      dist: precise
+
+before_script:
+  - composer install
+
+script:
+  - vendor/bin/phpunit
+  - vendor/bin/athletic --path test/Benchmark --formatter GroupedFormatter
