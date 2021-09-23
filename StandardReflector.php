@@ -24,13 +24,14 @@ use function get_class;
 use function is_string;
 
 use const PHP_VERSION_ID;
+use Closure;
 
 class StandardReflector implements Reflector
 {
     /**
      * {@inheritDoc}
      */
-    public function getClass($class)
+    public function getClass(string|object $class): ReflectionClass
     {
         return new ReflectionClass($class);
     }
@@ -38,7 +39,7 @@ class StandardReflector implements Reflector
     /**
      * {@inheritDoc}
      */
-    public function getConstructor($class)
+    public function getConstructor(string|object $class): ?ReflectionMethod
     {
         $reflectionClass = new ReflectionClass($class);
 
@@ -48,7 +49,7 @@ class StandardReflector implements Reflector
     /**
      * {@inheritDoc}
      */
-    public function getConstructorParams($class)
+    public function getConstructorParams(string|object $class)
     {
         $reflectedConstructor = $this->getConstructor($class);
 
@@ -60,7 +61,7 @@ class StandardReflector implements Reflector
     /**
      * {@inheritDoc}
      */
-    public function getParamTypeHint(ReflectionFunctionAbstract $function, ReflectionParameter $param)
+    public function getParamTypeHint(ReflectionFunctionAbstract $function, ReflectionParameter $param): ?string
     {
         if (PHP_VERSION_ID >= 80000) {
             $reflectionClass = $param->getType() ? (string) $param->getType() : null;
@@ -77,7 +78,7 @@ class StandardReflector implements Reflector
     /**
      * {@inheritDoc}
      */
-    public function getFunction($functionName)
+    public function getFunction(string|Closure $functionName): ReflectionFunction
     {
         return new ReflectionFunction($functionName);
     }
@@ -85,7 +86,7 @@ class StandardReflector implements Reflector
     /**
      * {@inheritDoc}
      */
-    public function getMethod($classNameOrInstance, $methodName)
+    public function getMethod(string|object $classNameOrInstance, string $methodName): ReflectionMethod
     {
         $className = is_string($classNameOrInstance)
         ? $classNameOrInstance

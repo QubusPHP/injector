@@ -24,6 +24,9 @@ use function get_class;
 use function is_string;
 use function strpos;
 use function strtolower;
+use ReflectionFunction;
+use ReflectionClass;
+use Closure;
 
 class CachingReflector implements Reflector
 {
@@ -46,7 +49,7 @@ class CachingReflector implements Reflector
     /**
      * {@inheritDoc}
      */
-    public function getClass($class)
+    public function getClass(string|object $class): ReflectionClass
     {
         $cacheKey = self::CACHE_KEY_CLASSES . strtolower($class);
 
@@ -61,7 +64,7 @@ class CachingReflector implements Reflector
     /**
      * {@inheritDoc}
      */
-    public function getConstructor($class)
+    public function getConstructor(string|object $class): ?ReflectionMethod
     {
         $cacheKey = self::CACHE_KEY_CTORS . strtolower($class);
 
@@ -76,7 +79,7 @@ class CachingReflector implements Reflector
     /**
      * {@inheritDoc}
      */
-    public function getConstructorParams($class)
+    public function getConstructorParams(string|object $class)
     {
         $cacheKey = self::CACHE_KEY_CTOR_PARAMS . strtolower($class);
 
@@ -91,7 +94,7 @@ class CachingReflector implements Reflector
     /**
      * {@inheritDoc}
      */
-    public function getParamTypeHint(ReflectionFunctionAbstract $function, ReflectionParameter $param)
+    public function getParamTypeHint(ReflectionFunctionAbstract $function, ReflectionParameter $param): ?string
     {
         $lowParam = strtolower($param->name);
 
@@ -121,7 +124,7 @@ class CachingReflector implements Reflector
     /**
      * {@inheritDoc}
      */
-    public function getFunction($functionName)
+    public function getFunction(string|Closure $functionName): ReflectionFunction
     {
         $lowFunc = strtolower($functionName);
         $cacheKey = self::CACHE_KEY_FUNCS . $lowFunc;
@@ -137,7 +140,7 @@ class CachingReflector implements Reflector
     /**
      * {@inheritDoc}
      */
-    public function getMethod($classNameOrInstance, $methodName)
+    public function getMethod(string|object $classNameOrInstance, string $methodName): ReflectionMethod
     {
         $className = is_string($classNameOrInstance)
         ? $classNameOrInstance
