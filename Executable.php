@@ -29,7 +29,7 @@ use const PHP_VERSION;
 class Executable
 {
     /** @var ReflectionFunctionAbstract $callableReflection */
-    private $callableReflection;
+    private ReflectionFunctionAbstract $callableReflection;
 
     /** @var mixed $invocationObject */
     private $invocationObject;
@@ -93,17 +93,20 @@ class Executable
         }
     }
 
-    public function getCallableReflection()
+    public function getCallableReflection(): ReflectionFunctionAbstract
     {
         return $this->callableReflection;
     }
 
+    /**
+     * @return ReflectionFunctionAbstract
+     */
     public function getInvocationObject()
     {
         return $this->invocationObject;
     }
 
-    public function isInstanceMethod()
+    public function isInstanceMethod(): bool
     {
         return $this->isInstanceMethod;
     }

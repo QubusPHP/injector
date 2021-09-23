@@ -66,7 +66,7 @@ class InjectionChain
      * @return string|false Class name of the element at the specified index. False if index not found.
      * @throws RuntimeException If the index is not a numeric value.
      */
-    public function getByIndex($index)
+    public function getByIndex(int $index)
     {
         if (! is_numeric($index)) {
             throw new RuntimeException('Index needs to be a numeric value.');

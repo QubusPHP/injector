@@ -34,7 +34,7 @@ class Container extends Injector implements ContainerInterface
     {
         if (! $this->has($id)) {
             throw new NotFoundException(
-                'No entry found: ' . $id
+                sprintf('No entry found: %s', $id)
             );
         }
 
@@ -42,7 +42,7 @@ class Container extends Injector implements ContainerInterface
             return $this->make($id);
         } catch (Exception $previous) {
             throw new ContainerException(
-                'Unable to get: ' . $id,
+                sprintf('Unable to get: %s', $id),
                 0,
                 $previous
             );
