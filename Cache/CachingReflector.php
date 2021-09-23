@@ -4,7 +4,8 @@
  * Qubus\Injector
  *
  * @link       https://github.com/QubusPHP/injector
- * @copyright  2020 Joshua Parker
+ * @copyright  2020 Joshua Parker <josh@joshuaparker.blog>
+ * @copyright  2013-2014 Daniel Lowrey, Levi Morrison, Dan Ackroyd
  * @license    https://opensource.org/licenses/mit-license.php MIT License
  *
  * @since      1.0.0
@@ -14,13 +15,15 @@ declare(strict_types=1);
 
 namespace Qubus\Injector\Cache;
 
+use Closure;
 use Qubus\Injector\Reflector;
 use Qubus\Injector\StandardReflector;
+use ReflectionClass;
+use ReflectionFunction;
 use ReflectionFunctionAbstract;
 use ReflectionMethod;
 use ReflectionParameter;
 
-use function get_class;
 use function is_string;
 use function strpos;
 use function strtolower;
@@ -46,7 +49,7 @@ class CachingReflector implements Reflector
     /**
      * {@inheritDoc}
      */
-    public function getClass($class)
+    public function getClass(string|object $class): ReflectionClass
     {
         $cacheKey = self::CACHE_KEY_CLASSES . strtolower($class);
 
@@ -61,7 +64,7 @@ class CachingReflector implements Reflector
     /**
      * {@inheritDoc}
      */
-    public function getConstructor($class)
+    public function getConstructor(string|object $class): ?ReflectionMethod
     {
         $cacheKey = self::CACHE_KEY_CTORS . strtolower($class);
 
@@ -76,7 +79,7 @@ class CachingReflector implements Reflector
     /**
      * {@inheritDoc}
      */
-    public function getConstructorParams($class)
+    public function getConstructorParams(string|object $class)
     {
         $cacheKey = self::CACHE_KEY_CTOR_PARAMS . strtolower($class);
 
@@ -91,7 +94,7 @@ class CachingReflector implements Reflector
     /**
      * {@inheritDoc}
      */
-    public function getParamTypeHint(ReflectionFunctionAbstract $function, ReflectionParameter $param)
+    public function getParamTypeHint(ReflectionFunctionAbstract $function, ReflectionParameter $param): ?string
     {
         $lowParam = strtolower($param->name);
 
@@ -121,7 +124,7 @@ class CachingReflector implements Reflector
     /**
      * {@inheritDoc}
      */
-    public function getFunction($functionName)
+    public function getFunction(string|Closure $functionName): ReflectionFunction
     {
         $lowFunc = strtolower($functionName);
         $cacheKey = self::CACHE_KEY_FUNCS . $lowFunc;
@@ -137,11 +140,11 @@ class CachingReflector implements Reflector
     /**
      * {@inheritDoc}
      */
-    public function getMethod($classNameOrInstance, $methodName)
+    public function getMethod(string|object $classNameOrInstance, string $methodName): ReflectionMethod
     {
         $className = is_string($classNameOrInstance)
         ? $classNameOrInstance
-        : get_class($classNameOrInstance);
+        : $classNameOrInstance::class;
 
         $cacheKey = self::CACHE_KEY_METHODS . strtolower($className) . '.' . strtolower($methodName);
 

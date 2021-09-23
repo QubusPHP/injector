@@ -4,7 +4,8 @@
  * Qubus\Injector
  *
  * @link       https://github.com/QubusPHP/injector
- * @copyright  2020 Joshua Parker
+ * @copyright  2020 Joshua Parker <josh@joshuaparker.blog>
+ * @copyright  2013-2014 Daniel Lowrey, Levi Morrison, Dan Ackroyd
  * @license    https://opensource.org/licenses/mit-license.php MIT License
  *
  * @since      1.0.0
@@ -19,8 +20,11 @@ use Qubus\Injector\InjectionChain;
 use Qubus\Injector\Injector;
 use Qubus\Injector\InjectorException;
 use stdClass;
+use PHPUnit\Framework\Assert;
 use PHPUnit\Framework\TestCase;
 use Qubus\Injector\Config\Factory;
+use Qubus\Injector\ConfigException;
+use TypeError;
 
 class InjectorTest extends TestCase
 {
@@ -39,24 +43,24 @@ class InjectorTest extends TestCase
         $objFooB  = $injector->make('BNFoo');
         $objBarA  = $injector->make('BNBar');
         $objBarB  = $injector->make('BNBar');
-        $this->assertInstanceOf(
+        Assert::assertInstanceOf(
             'Qubus\Tests\Injector\NotSharedClass',
             $objFooA
         );
-        $this->assertInstanceOf(
+        Assert::assertInstanceOf(
             'Qubus\Tests\Injector\NotSharedClass',
             $objFooB
         );
-        $this->assertInstanceOf(
+        Assert::assertInstanceOf(
             'Qubus\Tests\Injector\SharedClass',
             $objBarA
         );
-        $this->assertInstanceOf(
+        Assert::assertInstanceOf(
             'Qubus\Tests\Injector\SharedClass',
             $objBarB
         );
-        $this->assertNotSame($objFooA, $objFooB);
-        $this->assertSame($objBarA, $objBarB);
+        Assert::assertNotSame($objFooA, $objFooB);
+        Assert::assertSame($objBarA, $objBarB);
     }
 
     public function testArgumentDefinitionsThroughConfig()
@@ -70,7 +74,7 @@ class InjectorTest extends TestCase
         ]));
 
         $obj = $injector->make('Qubus\Tests\Injector\DependencyWithDefinedParam');
-        $this->assertEquals(42, $obj->foo);
+        Assert::assertEquals(42, $obj->foo);
     }
 
     public function testDelegationsThroughConfig()
@@ -84,7 +88,7 @@ class InjectorTest extends TestCase
         ]));
 
         $obj      = $injector->make('stdClass');
-        $this->assertInstanceOf(SomeClassName::class, $obj);
+        Assert::assertInstanceOf(SomeClassName::class, $obj);
     }
 
     public function testPreparationsThroughConfig()
@@ -101,15 +105,15 @@ class InjectorTest extends TestCase
         ]));
 
         $obj1     = $injector->make('stdClass');
-        $this->assertSame(42, $obj1->testval);
+        Assert::assertSame(42, $obj1->testval);
         $obj2 = $injector->make('Qubus\Tests\Injector\PreparesImplementationTest');
-        $this->assertSame(42, $obj2->testProp);
+        Assert::assertSame(42, $obj2->testProp);
     }
 
     public function testMakeInstanceInjectsSimpleConcreteDependency()
     {
         $injector = new Injector(Factory::create([]));
-        $this->assertEquals(
+        Assert::assertEquals(
             new TestNeedsDep(new TestDependency),
             $injector->make('Qubus\Tests\Injector\TestNeedsDep')
         );
@@ -118,7 +122,7 @@ class InjectorTest extends TestCase
     public function testMakeInstanceReturnsNewInstanceIfClassHasNoConstructor()
     {
         $injector = new Injector(Factory::create([]));
-        $this->assertEquals(
+        Assert::assertEquals(
             new TestNoConstructor,
             $injector->make('Qubus\Tests\Injector\TestNoConstructor')
         );
@@ -131,28 +135,34 @@ class InjectorTest extends TestCase
             'Qubus\Tests\Injector\DepInterface',
             'Qubus\Tests\Injector\DepImplementation'
         );
-        $this->assertEquals(
+        Assert::assertEquals(
             new DepImplementation,
             $injector->make('Qubus\Tests\Injector\DepInterface')
         );
     }
 
     /**
-     * @expectedException \Qubus\Injector\InjectionException
-     * @expectedExceptionCode \Qubus\Injector\InjectorException::E_NEEDS_DEFINITION
+     * @expectedException InjectionException
+     * @expectedExceptionCode InjectorException::E_NEEDS_DEFINITION
      */
     public function testMakeInstanceThrowsExceptionOnInterfaceWithoutAlias()
     {
+        $this->expectException(InjectionException::class);
+        $this->expectExceptionCode(InjectorException::E_NEEDS_DEFINITION);
+
         $injector = new Injector(Factory::create([]));
         $injector->make('Qubus\Tests\Injector\DepInterface');
     }
 
     /**
-     * @expectedException \Qubus\Injector\InjectionException
-     * @expectedExceptionCode \Qubus\Injector\InjectorException::E_NEEDS_DEFINITION
+     * @expectedException InjectionException
+     * @expectedExceptionCode InjectorException::E_NEEDS_DEFINITION
      */
     public function testMakeInstanceThrowsExceptionOnNonConcreteCtorParamWithoutImplementation()
     {
+        $this->expectException(InjectionException::class);
+        $this->expectExceptionCode(InjectorException::E_NEEDS_DEFINITION);
+
         $injector = new Injector(Factory::create([]));
         $injector->make('Qubus\Tests\Injector\RequiresInterface');
     }
@@ -165,7 +175,7 @@ class InjectorTest extends TestCase
             'Qubus\Tests\Injector\DepImplementation'
         );
         $obj = $injector->make('Qubus\Tests\Injector\RequiresInterface');
-        $this->assertInstanceOf(
+        Assert::assertInstanceOf(
             'Qubus\Tests\Injector\RequiresInterface',
             $obj
         );
@@ -175,8 +185,8 @@ class InjectorTest extends TestCase
     {
         $injector         = new Injector(Factory::create([]));
         $nullCtorParamObj = $injector->make('Qubus\Tests\Injector\ProvTestNoDefinitionNullDefaultClass');
-        $this->assertEquals(new ProvTestNoDefinitionNullDefaultClass, $nullCtorParamObj);
-        $this->assertEquals(null, $nullCtorParamObj->arg);
+        Assert::assertEquals(new ProvTestNoDefinitionNullDefaultClass, $nullCtorParamObj);
+        Assert::assertEquals(null, $nullCtorParamObj->arg);
     }
 
     public function testMakeInstanceReturnsSharedInstanceIfAvailable()
@@ -189,18 +199,20 @@ class InjectorTest extends TestCase
         $injector->share('Qubus\Tests\Injector\RequiresInterface');
         $injected = $injector->make('Qubus\Tests\Injector\RequiresInterface');
 
-        $this->assertEquals('something', $injected->testDep->testProp);
+        Assert::assertEquals('something', $injected->testDep->testProp);
         $injected->testDep->testProp = 'something else';
 
         $injected2 = $injector->make('Qubus\Tests\Injector\RequiresInterface');
-        $this->assertEquals('something else', $injected2->testDep->testProp);
+        Assert::assertEquals('something else', $injected2->testDep->testProp);
     }
 
     /**
-     * @expectedException \Qubus\Injector\InjectorException
+     * @expectedException InjectorException
      */
     public function testMakeInstanceThrowsExceptionOnClassLoadFailure()
     {
+        $this->expectException(InjectionException::class);
+
         $injector = new Injector(Factory::create([]));
         $injector->make('ClassThatDoesntExist');
     }
@@ -216,7 +228,7 @@ class InjectorTest extends TestCase
             'Qubus\Tests\Injector\TestNeedsDep',
             ['testDep' => 'Qubus\Tests\Injector\TestDependency2']
         );
-        $this->assertEquals('testVal2', $injected->testDep->testProp);
+        Assert::assertEquals('testVal2', $injected->testDep->testProp);
     }
 
     public function testMakeInstanceCustomDefinitionOverridesExistingDefinitions()
@@ -233,8 +245,8 @@ class InjectorTest extends TestCase
             'Qubus\Tests\Injector\InjectorTestChildClass',
             [':arg1' => 'Override']
         );
-        $this->assertEquals('Override', $injected->arg1);
-        $this->assertEquals('Second argument', $injected->arg2);
+        Assert::assertEquals('Override', $injected->arg1);
+        Assert::assertEquals('Second argument', $injected->arg2);
     }
 
     public function testMakeInstanceStoresShareIfMarkedWithNullInstance()
@@ -242,7 +254,7 @@ class InjectorTest extends TestCase
         $injector = new Injector(Factory::create([]));
         $injector->share('Qubus\Tests\Injector\TestDependency');
         $obj = $injector->make('Qubus\Tests\Injector\TestDependency');
-        $this->assertInstanceOf('Qubus\Tests\Injector\TestDependency', $obj);
+        Assert::assertInstanceOf('Qubus\Tests\Injector\TestDependency', $obj);
     }
 
     public function testMakeInstanceUsesReflectionForUnknownParamsInMultiBuildWithDeps()
@@ -252,33 +264,39 @@ class InjectorTest extends TestCase
             'Qubus\Tests\Injector\TestMultiDepsWithCtor',
             ['val1' => 'Qubus\Tests\Injector\TestDependency']
         );
-        $this->assertInstanceOf('Qubus\Tests\Injector\TestMultiDepsWithCtor', $obj);
+        Assert::assertInstanceOf('Qubus\Tests\Injector\TestMultiDepsWithCtor', $obj);
 
         $obj = $injector->make(
             'Qubus\Tests\Injector\NoTypehintNoDefaultConstructorClass',
             ['val1' => 'Qubus\Tests\Injector\TestDependency']
         );
-        $this->assertInstanceOf('Qubus\Tests\Injector\NoTypehintNoDefaultConstructorClass', $obj);
-        $this->assertEquals(null, $obj->testParam);
+        Assert::assertInstanceOf('Qubus\Tests\Injector\NoTypehintNoDefaultConstructorClass', $obj);
+        Assert::assertEquals(null, $obj->testParam);
     }
 
     /**
-     * @expectedException \Qubus\Injector\InjectionException
-     * @expectedExceptionCode \Qubus\Injector\InjectorException::E_UNDEFINED_PARAM
+     * @expectedException InjectionException
+     * @expectedExceptionCode InjectorException::E_UNDEFINED_PARAM
      */
     public function testMakeInstanceThrowsExceptionOnUntypehintedParameterWithoutDefinitionOrDefault()
     {
+        $this->expectException(InjectionException::class);
+        $this->expectExceptionCode(InjectorException::E_UNDEFINED_PARAM);
+
         $injector = new Injector(Factory::create([]));
         $obj      = $injector->make('Qubus\Tests\Injector\InjectorTestCtorParamWithNoTypehintOrDefault');
-        $this->assertNull($obj->val);
+        Assert::assertNull($obj->val);
     }
 
     /**
-     * @expectedException \Qubus\Injector\InjectionException
-     * @expectedExceptionCode \Qubus\Injector\InjectorException::E_UNDEFINED_PARAM
+     * @expectedException InjectionException
+     * @expectedExceptionCode InjectorException::E_UNDEFINED_PARAM
      */
     public function testMakeInstanceThrowsExceptionOnUntypehintedParameterWithoutDefinitionOrDefaultThroughAliasedTypehint(
     ) {
+        $this->expectException(InjectionException::class);
+        $this->expectExceptionCode(InjectorException::E_UNDEFINED_PARAM);
+
         $injector = new Injector(Factory::create([]));
         $injector->alias(
             'Qubus\Tests\Injector\TestNoExplicitDefine',
@@ -289,10 +307,12 @@ class InjectorTest extends TestCase
 
     /**
      * @TODO
-     * @expectedException \Qubus\Injector\InjectorException
+     * @expectedException InjectorException
      */
     public function testMakeInstanceThrowsExceptionOnUninstantiableTypehintWithoutDefinition()
     {
+        $this->expectException(InjectionException::class);
+
         $injector = new Injector(Factory::create([]));
         $obj      = $injector->make('Qubus\Tests\Injector\RequiresInterface');
     }
@@ -303,7 +323,7 @@ class InjectorTest extends TestCase
         $injector      = new Injector(Factory::create([]));
         $injector->defineParam('thumbnailSize', $thumbnailSize);
         $testClass = $injector->make('Qubus\Tests\Injector\RequiresDependencyWithTypelessParameters');
-        $this->assertEquals(
+        Assert::assertEquals(
             $thumbnailSize,
             $testClass->getThumbnailSize(),
             'Typeless define was not injected correctly.'
@@ -320,7 +340,7 @@ class InjectorTest extends TestCase
             'Qubus\Tests\Injector\ProviderTestCtorParamWithNoTypehintOrDefault'
         );
         $obj = $injector->make('Qubus\Tests\Injector\ProviderTestCtorParamWithNoTypehintOrDefaultDependent');
-        $this->assertInstanceOf(
+        Assert::assertInstanceOf(
             'Qubus\Tests\Injector\ProviderTestCtorParamWithNoTypehintOrDefaultDependent',
             $obj
         );
@@ -343,20 +363,20 @@ class InjectorTest extends TestCase
         );
 
         $obj = $injector->make('Qubus\Tests\Injector\InjectorTestRawCtorParams');
-        $this->assertInternalType('string', $obj->string);
-        $this->assertInstanceOf('stdClass', $obj->obj);
-        $this->assertInternalType('int', $obj->int);
-        $this->assertInternalType('array', $obj->array);
-        $this->assertInternalType('float', $obj->float);
-        $this->assertInternalType('bool', $obj->bool);
-        $this->assertNull($obj->null);
+        Assert::assertIsString($obj->string);
+        Assert::assertInstanceOf('stdClass', $obj->obj);
+        Assert::assertIsInt($obj->int);
+        Assert::assertIsArray($obj->array);
+        Assert::assertIsFloat($obj->float);
+        Assert::assertIsBool($obj->bool);
+        Assert::assertNull($obj->null);
     }
 
     public function testMakeInstanceHandlesNamespacedClasses()
     {
         $injector = new Injector(Factory::create([]));
         $obj      = $injector->make('Qubus\Tests\Injector\SomeClassName');
-        $this->assertInstanceOf('Qubus\Tests\Injector\SomeClassName', $obj);
+        Assert::assertInstanceOf('Qubus\Tests\Injector\SomeClassName', $obj);
     }
 
     public function testMakeInstanceDelegate()
@@ -375,7 +395,7 @@ class InjectorTest extends TestCase
 
         $obj = $injector->make('Qubus\Tests\Injector\TestDependency');
 
-        $this->assertInstanceOf('Qubus\Tests\Injector\TestDependency', $obj);
+        Assert::assertInstanceOf('Qubus\Tests\Injector\TestDependency', $obj);
     }
 
     public function testMakeInstanceWithStringDelegate()
@@ -386,23 +406,27 @@ class InjectorTest extends TestCase
             'Qubus\Tests\Injector\StringstdClassDelegateMock'
         );
         $obj = $injector->make('stdClass');
-        $this->assertEquals(42, $obj->test);
+        Assert::assertEquals(42, $obj->test);
     }
 
     /**
-     * @expectedException \Qubus\Injector\ConfigException
+     * @expectedException ConfigException
      */
     public function testMakeInstanceThrowsExceptionIfStringDelegateClassHasNoInvokeMethod()
     {
+        $this->expectException(ConfigException::class);
+
         $injector = new Injector(Factory::create([]));
         $injector->delegate('stdClass', 'StringDelegateWithNoInvokeMethod');
     }
 
     /**
-     * @expectedException \Qubus\Injector\ConfigException
+     * @expectedException ConfigException
      */
     public function testMakeInstanceThrowsExceptionIfStringDelegateClassInstantiationFails()
     {
+        $this->expectException(ConfigException::class);
+
         $injector = new Injector(Factory::create([]));
         $injector->delegate(
             'stdClass',
@@ -411,10 +435,12 @@ class InjectorTest extends TestCase
     }
 
     /**
-     * @expectedException \Qubus\Injector\InjectionException
+     * @expectedException InjectionException
      */
     public function testMakeInstanceThrowsExceptionOnUntypehintedParameterWithNoDefinition()
     {
+        $this->expectException(InjectionException::class);
+
         $injector = new Injector(Factory::create([]));
         $obj      = $injector->make('Qubus\Tests\Injector\RequiresInterface');
     }
@@ -427,7 +453,7 @@ class InjectorTest extends TestCase
             'Qubus\Tests\Injector\RequiresInterface',
             $definition
         );
-        $this->assertInstanceOf(
+        Assert::assertInstanceOf(
             'Qubus\Tests\Injector\RequiresInterface',
             $injector->make('Qubus\Tests\Injector\RequiresInterface')
         );
@@ -439,36 +465,27 @@ class InjectorTest extends TestCase
         $testShare       = new stdClass;
         $testShare->test = 42;
 
-        $this->assertInstanceOf(
+        Assert::assertInstanceOf(
             'Qubus\Injector\Injector',
             $injector->share($testShare)
         );
         $testShare->test = 'test';
-        $this->assertEquals('test', $injector->make('stdClass')->test);
+        Assert::assertEquals('test', $injector->make('stdClass')->test);
     }
 
     public function testShareMarksClassSharedOnNullObjectParameter()
     {
         $injector = new Injector(Factory::create([]));
-        $this->assertInstanceOf(
+        Assert::assertInstanceOf(
             'Qubus\Injector\Injector',
             $injector->share('SomeClass')
         );
     }
 
-    /**
-     * @expectedException \Qubus\Injector\ConfigException
-     */
-    public function testShareThrowsExceptionOnInvalidArgument()
-    {
-        $injector = new Injector(Factory::create([]));
-        $injector->share(42);
-    }
-
     public function testAliasAssignsValueAndReturnsCurrentInstance()
     {
         $injector = new Injector(Factory::create([]));
-        $this->assertInstanceOf(
+        Assert::assertInstanceOf(
             'Qubus\Injector\Injector',
             $injector->alias(
                 'DepInterface',
@@ -488,10 +505,12 @@ class InjectorTest extends TestCase
 
     /**
      * @dataProvider provideInvalidDelegates
-     * @expectedException \Qubus\Injector\ConfigException
+     * @expectedException ConfigException
      */
     public function testDelegateThrowsExceptionIfDelegateIsNotCallableOrString($badDelegate)
     {
+        $this->expectException(ConfigException::class);
+
         $injector = new Injector(Factory::create([]));
         $injector->delegate('Qubus\Tests\Injector\TestDependency', $badDelegate);
     }
@@ -503,7 +522,7 @@ class InjectorTest extends TestCase
             'Qubus\Tests\Injector\MadeByDelegate',
             'Qubus\Tests\Injector\CallableDelegateClassTest'
         );
-        $this->assertInstanceof(
+        Assert::assertInstanceof(
             'Qubus\Tests\Injector\MadeByDelegate',
             $injector->make('Qubus\Tests\Injector\MadeByDelegate')
         );
@@ -519,7 +538,7 @@ class InjectorTest extends TestCase
                 '__invoke',
             ]
         );
-        $this->assertInstanceof(
+        Assert::assertInstanceof(
             'Qubus\Tests\Injector\MadeByDelegate',
             $injector->make('Qubus\Tests\Injector\MadeByDelegate')
         );
@@ -532,8 +551,8 @@ class InjectorTest extends TestCase
             $injector->delegate('Qubus\Tests\Injector\DelegatableInterface', 'FunctionWhichDoesNotExist');
             $this->fail("Delegation was supposed to fail.");
         } catch (InjectorException $ie) {
-            $this->assertContains('FunctionWhichDoesNotExist', $ie->getMessage());
-            $this->assertEquals(
+            Assert::assertStringContainsString('FunctionWhichDoesNotExist', $ie->getMessage());
+            Assert::assertEquals(
                 InjectorException::E_DELEGATE_ARGUMENT,
                 $ie->getCode()
             );
@@ -550,9 +569,9 @@ class InjectorTest extends TestCase
             );
             $this->fail("Delegation was supposed to fail.");
         } catch (InjectorException $ie) {
-            $this->assertContains('stdClass', $ie->getMessage());
-            $this->assertContains('methodWhichDoesNotExist', $ie->getMessage());
-            $this->assertEquals(InjectorException::E_DELEGATE_ARGUMENT, $ie->getCode());
+            Assert::assertStringContainsString('stdClass', $ie->getMessage());
+            Assert::assertStringContainsString('methodWhichDoesNotExist', $ie->getMessage());
+            Assert::assertEquals(InjectorException::E_DELEGATE_ARGUMENT, $ie->getCode());
         }
     }
 
@@ -562,7 +581,7 @@ class InjectorTest extends TestCase
     public function testProvisionedInvokables($toInvoke, $definition, $expectedResult)
     {
         $injector = new Injector(Factory::create([]));
-        $this->assertEquals($expectedResult, $injector->execute($toInvoke, $definition));
+        Assert::assertEquals($expectedResult, $injector->execute($toInvoke, $definition));
     }
 
     public function provideExecutionExpectations()
@@ -743,7 +762,7 @@ class InjectorTest extends TestCase
     {
         $injector  = new Injector(Factory::create([]));
         $invokable = $injector->buildExecutable('Qubus\Tests\Injector\ClassWithStaticMethodThatTakesArg::doSomething');
-        $this->assertEquals(42, $invokable(41));
+        Assert::assertEquals(42, $invokable(41));
     }
 
     public function testInterfaceFactoryDelegation()
@@ -755,14 +774,16 @@ class InjectorTest extends TestCase
         );
         $requiresDelegatedInterface = $injector->make('Qubus\Tests\Injector\RequiresDelegatedInterface');
         $requiresDelegatedInterface->foo();
-        $this->assertTrue(true);
+        Assert::assertTrue(true);
     }
 
     /**
-     * @expectedException \Qubus\Injector\InjectorException
+     * @expectedException InjectorException
      */
     public function testMissingAlias()
     {
+        $this->expectException(InjectionException::class);
+
         $injector  = new Injector(Factory::create([]));
         $testClass = $injector->make('Qubus\Tests\Injector\TestMissingDependency');
     }
@@ -772,7 +793,7 @@ class InjectorTest extends TestCase
         $injector = new Injector(Factory::create([]));
         $injector->alias('Qubus\Tests\Injector\ConcreteClass1', 'Qubus\Tests\Injector\ConcreteClass2');
         $obj = $injector->make('Qubus\Tests\Injector\ConcreteClass1');
-        $this->assertInstanceOf('Qubus\Tests\Injector\ConcreteClass2', $obj);
+        Assert::assertInstanceOf('Qubus\Tests\Injector\ConcreteClass2', $obj);
     }
 
     public function testSharedByAliasedInterfaceName()
@@ -785,7 +806,7 @@ class InjectorTest extends TestCase
         $injector->share('Qubus\Tests\Injector\SharedAliasedInterface');
         $class  = $injector->make('Qubus\Tests\Injector\SharedAliasedInterface');
         $class2 = $injector->make('Qubus\Tests\Injector\SharedAliasedInterface');
-        $this->assertSame($class, $class2);
+        Assert::assertSame($class, $class2);
     }
 
     public function testNotSharedByAliasedInterfaceName()
@@ -803,7 +824,7 @@ class InjectorTest extends TestCase
         $class  = $injector->make('Qubus\Tests\Injector\SharedAliasedInterface');
         $class2 = $injector->make('Qubus\Tests\Injector\SharedAliasedInterface');
 
-        $this->assertNotSame($class, $class2);
+        Assert::assertNotSame($class, $class2);
     }
 
     public function testSharedByAliasedInterfaceNameReversedOrder()
@@ -816,7 +837,7 @@ class InjectorTest extends TestCase
         );
         $class  = $injector->make('Qubus\Tests\Injector\SharedAliasedInterface');
         $class2 = $injector->make('Qubus\Tests\Injector\SharedAliasedInterface');
-        $this->assertSame($class, $class2);
+        Assert::assertSame($class, $class2);
     }
 
     public function testSharedByAliasedInterfaceNameWithParameter()
@@ -829,7 +850,7 @@ class InjectorTest extends TestCase
         $injector->share('Qubus\Tests\Injector\SharedAliasedInterface');
         $sharedClass = $injector->make('Qubus\Tests\Injector\SharedAliasedInterface');
         $childClass  = $injector->make('Qubus\Tests\Injector\ClassWithAliasAsParameter');
-        $this->assertSame($sharedClass, $childClass->sharedClass);
+        Assert::assertSame($sharedClass, $childClass->sharedClass);
     }
 
     public function testSharedByAliasedInstance()
@@ -842,7 +863,7 @@ class InjectorTest extends TestCase
         $sharedClass = $injector->make('Qubus\Tests\Injector\SharedAliasedInterface');
         $injector->share($sharedClass);
         $childClass = $injector->make('Qubus\Tests\Injector\ClassWithAliasAsParameter');
-        $this->assertSame($sharedClass, $childClass->sharedClass);
+        Assert::assertSame($sharedClass, $childClass->sharedClass);
     }
 
     public function testMultipleShareCallsDontOverrideTheOriginalSharedInstance()
@@ -852,7 +873,7 @@ class InjectorTest extends TestCase
         $stdClass1 = $injector->make('stdClass');
         $injector->share('stdClass');
         $stdClass2 = $injector->make('stdClass');
-        $this->assertSame($stdClass1, $stdClass2);
+        Assert::assertSame($stdClass1, $stdClass2);
     }
 
     public function testDependencyWhereSharedWithProtectedConstructor()
@@ -864,7 +885,7 @@ class InjectorTest extends TestCase
 
         $outer = $injector->make('Qubus\Tests\Injector\TestNeedsDepWithProtCons');
 
-        $this->assertSame($inner, $outer->dep);
+        Assert::assertSame($inner, $outer->dep);
     }
 
     public function testDependencyWhereShared()
@@ -873,18 +894,18 @@ class InjectorTest extends TestCase
         $injector->share('Qubus\Tests\Injector\ClassInnerB');
         $innerDep = $injector->make('Qubus\Tests\Injector\ClassInnerB');
         $inner    = $injector->make('Qubus\Tests\Injector\ClassInnerA');
-        $this->assertSame($innerDep, $inner->dep);
+        Assert::assertSame($innerDep, $inner->dep);
         $outer = $injector->make('Qubus\Tests\Injector\ClassOuter');
-        $this->assertSame($innerDep, $outer->dep->dep);
+        Assert::assertSame($innerDep, $outer->dep->dep);
     }
 
     public function testBugWithReflectionPoolIncorrectlyReturningBadInfo()
     {
         $injector = new Injector(Factory::create([]));
         $obj      = $injector->make('Qubus\Tests\Injector\ClassOuter');
-        $this->assertInstanceOf('Qubus\Tests\Injector\ClassOuter', $obj);
-        $this->assertInstanceOf('Qubus\Tests\Injector\ClassInnerA', $obj->dep);
-        $this->assertInstanceOf('Qubus\Tests\Injector\ClassInnerB', $obj->dep->dep);
+        Assert::assertInstanceOf('Qubus\Tests\Injector\ClassOuter', $obj);
+        Assert::assertInstanceOf('Qubus\Tests\Injector\ClassInnerA', $obj->dep);
+        Assert::assertInstanceOf('Qubus\Tests\Injector\ClassInnerB', $obj->dep->dep);
     }
 
     public function provideCyclicDependencies()
@@ -901,11 +922,14 @@ class InjectorTest extends TestCase
 
     /**
      * @dataProvider provideCyclicDependencies
-     * @expectedException \Qubus\Injector\InjectionException
-     * @expectedExceptionCode \Qubus\Injector\InjectorException::E_CYCLIC_DEPENDENCY
+     * @expectedException InjectionException
+     * @expectedExceptionCode InjectorException::E_CYCLIC_DEPENDENCY
      */
     public function testCyclicDependencies($class)
     {
+        $this->expectException(InjectionException::class);
+        $this->expectExceptionCode(InjectorException::E_CYCLIC_DEPENDENCY);
+
         $injector = new Injector(Factory::create([]));
         $injector->make($class);
     }
@@ -914,8 +938,8 @@ class InjectorTest extends TestCase
     {
         $injector = new Injector(Factory::create([]));
         $class    = $injector->make('Qubus\Tests\Injector\NonConcreteDependencyWithDefaultValue');
-        $this->assertInstanceOf('Qubus\Tests\Injector\NonConcreteDependencyWithDefaultValue', $class);
-        $this->assertNull($class->interface);
+        Assert::assertInstanceOf('Qubus\Tests\Injector\NonConcreteDependencyWithDefaultValue', $class);
+        Assert::assertNull($class->interface);
     }
 
     public function testNonConcreteDependencyWithDefaultValueThroughAlias()
@@ -926,8 +950,8 @@ class InjectorTest extends TestCase
             'Qubus\Tests\Injector\ImplementsInterface'
         );
         $class = $injector->make('Qubus\Tests\Injector\NonConcreteDependencyWithDefaultValue');
-        $this->assertInstanceOf('Qubus\Tests\Injector\NonConcreteDependencyWithDefaultValue', $class);
-        $this->assertInstanceOf('Qubus\Tests\Injector\ImplementsInterface', $class->interface);
+        Assert::assertInstanceOf('Qubus\Tests\Injector\NonConcreteDependencyWithDefaultValue', $class);
+        Assert::assertNotInstanceOf('Qubus\Tests\Injector\ImplementsInterface', $class->interface);
     }
 
     public function testNonConcreteDependencyWithDefaultValueThroughDelegation()
@@ -938,8 +962,8 @@ class InjectorTest extends TestCase
             'Qubus\Tests\Injector\ImplementsInterfaceFactory'
         );
         $class = $injector->make('Qubus\Tests\Injector\NonConcreteDependencyWithDefaultValue');
-        $this->assertInstanceOf('Qubus\Tests\Injector\NonConcreteDependencyWithDefaultValue', $class);
-        $this->assertInstanceOf('Qubus\Tests\Injector\ImplementsInterface', $class->interface);
+        Assert::assertInstanceOf('Qubus\Tests\Injector\NonConcreteDependencyWithDefaultValue', $class);
+        Assert::assertNotInstanceOf('Qubus\Tests\Injector\ImplementsInterface', $class->interface);
     }
 
     public function testDependencyWithDefaultValueThroughShare()
@@ -947,21 +971,24 @@ class InjectorTest extends TestCase
         $injector = new Injector(Factory::create([]));
         //Instance is not shared, null default is used for dependency
         $instance = $injector->make('Qubus\Tests\Injector\ConcreteDependencyWithDefaultValue');
-        $this->assertNull($instance->dependency);
+        Assert::assertNull($instance->dependency);
 
         //Instance is explicitly shared, $instance is used for dependency
         $instance = new stdClass();
         $injector->share($instance);
         $instance = $injector->make('Qubus\Tests\Injector\ConcreteDependencyWithDefaultValue');
-        $this->assertInstanceOf('stdClass', $instance->dependency);
+        Assert::assertNotInstanceOf('stdClass', $instance->dependency);
     }
 
     /**
-     * @expectedException \Qubus\Injector\ConfigException
-     * @expectedExceptionCode \Qubus\Injector\InjectorException::E_ALIASED_CANNOT_SHARE
+     * @expectedException ConfigException
+     * @expectedExceptionCode InjectorException::E_ALIASED_CANNOT_SHARE
      */
     public function testShareAfterAliasException()
     {
+        $this->expectException(ConfigException::class);
+        $this->expectExceptionCode(InjectorException::E_ALIASED_CANNOT_SHARE);
+
         $injector  = new Injector(Factory::create([]));
         $testClass = new stdClass();
         $injector->alias('stdClass', 'Qubus\Tests\Injector\SomeOtherClass');
@@ -975,7 +1002,7 @@ class InjectorTest extends TestCase
         $injector->alias('Qubus\Tests\Injector\DepInterface', 'Qubus\Tests\Injector\DepImplementation');
         $injector->share($testClass);
         $obj = $injector->make('Qubus\Tests\Injector\DepInterface');
-        $this->assertInstanceOf('Qubus\Tests\Injector\DepImplementation', $obj);
+        Assert::assertInstanceOf('Qubus\Tests\Injector\DepImplementation', $obj);
     }
 
     public function testAliasAfterShareByStringAllowed()
@@ -985,8 +1012,8 @@ class InjectorTest extends TestCase
         $injector->alias('Qubus\Tests\Injector\DepInterface', 'Qubus\Tests\Injector\DepImplementation');
         $obj  = $injector->make('Qubus\Tests\Injector\DepInterface');
         $obj2 = $injector->make('Qubus\Tests\Injector\DepInterface');
-        $this->assertInstanceOf('Qubus\Tests\Injector\DepImplementation', $obj);
-        $this->assertEquals($obj, $obj2);
+        Assert::assertInstanceOf('Qubus\Tests\Injector\DepImplementation', $obj);
+        Assert::assertEquals($obj, $obj2);
     }
 
     public function testAliasAfterShareBySharingAliasAllowed()
@@ -996,16 +1023,19 @@ class InjectorTest extends TestCase
         $injector->alias('Qubus\Tests\Injector\DepInterface', 'Qubus\Tests\Injector\DepImplementation');
         $obj  = $injector->make('Qubus\Tests\Injector\DepInterface');
         $obj2 = $injector->make('Qubus\Tests\Injector\DepInterface');
-        $this->assertInstanceOf('Qubus\Tests\Injector\DepImplementation', $obj);
-        $this->assertEquals($obj, $obj2);
+        Assert::assertInstanceOf('Qubus\Tests\Injector\DepImplementation', $obj);
+        Assert::assertEquals($obj, $obj2);
     }
 
     /**
-     * @expectedException \Qubus\Injector\ConfigException
-     * @expectedExceptionCode \Qubus\Injector\InjectorException::E_SHARED_CANNOT_ALIAS
+     * @expectedException ConfigException
+     * @expectedExceptionCode InjectorException::E_SHARED_CANNOT_ALIAS
      */
     public function testAliasAfterShareException()
     {
+        $this->expectException(ConfigException::class);
+        $this->expectExceptionCode(InjectorException::E_SHARED_CANNOT_ALIAS);
+
         $injector  = new Injector(Factory::create([]));
         $testClass = new stdClass();
         $injector->share($testClass);
@@ -1013,21 +1043,27 @@ class InjectorTest extends TestCase
     }
 
     /**
-     * @expectedException \Qubus\Injector\InjectionException
-     * @expectedExceptionCode \Qubus\Injector\InjectorException::E_NON_PUBLIC_CONSTRUCTOR
+     * @expectedException InjectionException
+     * @expectedExceptionCode InjectorException::E_NON_PUBLIC_CONSTRUCTOR
      */
     public function testAppropriateExceptionThrownOnNonPublicConstructor()
     {
+        $this->expectException(InjectionException::class);
+        $this->expectExceptionCode(InjectorException::E_NON_PUBLIC_CONSTRUCTOR);
+
         $injector = new Injector(Factory::create([]));
         $injector->make('Qubus\Tests\Injector\HasNonPublicConstructor');
     }
 
     /**
-     * @expectedException \Qubus\Injector\InjectionException
-     * @expectedExceptionCode \Qubus\Injector\InjectorException::E_NON_PUBLIC_CONSTRUCTOR
+     * @expectedException InjectionException
+     * @expectedExceptionCode InjectorException::E_NON_PUBLIC_CONSTRUCTOR
      */
     public function testAppropriateExceptionThrownOnNonPublicConstructorWithArgs()
     {
+        $this->expectException(InjectionException::class);
+        $this->expectExceptionCode(InjectorException::E_NON_PUBLIC_CONSTRUCTOR);
+
         $injector = new Injector(Factory::create([]));
         $injector->make('Qubus\Tests\Injector\HasNonPublicConstructorWithArgs');
     }
@@ -1067,22 +1103,28 @@ class InjectorTest extends TestCase
     }
 
     /**
-     * @expectedException \Qubus\Injector\InjectionException
-     * @expectedExceptionCode  \Qubus\Injector\InjectorException::E_INVOKABLE
+     * @expectedException InjectionException
+     * @expectedExceptionCode  InjectorException::E_INVOKABLE
      */
     public function testMakeExecutableFailsOnClassWithoutInvoke()
     {
+        $this->expectException(InjectionException::class);
+        $this->expectExceptionCode(InjectorException::E_INVOKABLE);
+
         $injector = new Injector(Factory::create([]));
         $object   = new stdClass();
         $injector->buildExecutable($object);
     }
 
     /**
-     * @expectedException \Qubus\Injector\ConfigException
-     * @expectedExceptionCode \Qubus\Injector\InjectorException::E_NON_EMPTY_STRING_ALIAS
+     * @expectedException ConfigException
+     * @expectedExceptionCode InjectorException::E_NON_EMPTY_STRING_ALIAS
      */
     public function testBadAlias()
     {
+        $this->expectException(ConfigException::class);
+        $this->expectExceptionCode(InjectorException::E_NON_EMPTY_STRING_ALIAS);
+
         $injector = new Injector(Factory::create([]));
         $injector->share('Qubus\Tests\Injector\DepInterface');
         $injector->alias('Qubus\Tests\Injector\DepInterface', '');
@@ -1093,7 +1135,7 @@ class InjectorTest extends TestCase
         $injector = new Injector(Factory::create([]));
         $injector->share('Qubus\Tests\Injector\DepImplementation');
         $injector->alias('Qubus\Tests\Injector\DepInterface', 'Qubus\Tests\Injector\DepImplementation');
-        $this->assertTrue(true);
+        Assert::assertTrue(true);
     }
 
     public function testDefineWithBackslashAndMakeWithoutBackslash()
@@ -1101,7 +1143,7 @@ class InjectorTest extends TestCase
         $injector = new Injector(Factory::create([]));
         $injector->define('Qubus\Tests\Injector\SimpleNoTypehintClass', [':arg' => 'tested']);
         $testClass = $injector->make('Qubus\Tests\Injector\SimpleNoTypehintClass');
-        $this->assertEquals('tested', $testClass->testParam);
+        Assert::assertEquals('tested', $testClass->testParam);
     }
 
     public function testShareWithBackslashAndMakeWithoutBackslash()
@@ -1113,7 +1155,7 @@ class InjectorTest extends TestCase
         $classB         = $injector->make('stdClass');
         $classB->tested = true;
 
-        $this->assertEquals($classA->tested, $classB->tested);
+        Assert::assertEquals($classA->tested, $classB->tested);
     }
 
     public function testInstanceMutate()
@@ -1124,7 +1166,7 @@ class InjectorTest extends TestCase
         });
         $obj = $injector->make('stdClass');
 
-        $this->assertSame(42, $obj->testval);
+        Assert::assertSame(42, $obj->testval);
     }
 
     public function testInterfaceMutate()
@@ -1138,18 +1180,21 @@ class InjectorTest extends TestCase
         );
         $obj = $injector->make('Qubus\Tests\Injector\PreparesImplementationTest');
 
-        $this->assertSame(42, $obj->testProp);
+        Assert::assertSame(42, $obj->testProp);
     }
 
     /**
      * Test that custom definitions are not passed through to dependencies.
      * Surprising things would happen if this did occur.
      *
-     * @expectedException \Qubus\Injector\InjectionException
-     * @expectedExceptionCode \Qubus\Injector\InjectorException::E_UNDEFINED_PARAM
+     * @expectedException InjectionException
+     * @expectedExceptionCode InjectorException::E_UNDEFINED_PARAM
      */
     public function testCustomDefinitionNotPassedThrough()
     {
+        $this->expectException(InjectionException::class);
+        $this->expectExceptionCode(InjectorException::E_UNDEFINED_PARAM);
+
         $injector = new Injector(Factory::create([]));
         $injector->share('Qubus\Tests\Injector\DependencyWithDefinedParam');
         $injector->make('Qubus\Tests\Injector\RequiresDependencyWithDefinedParam', [':foo' => 5]);
@@ -1163,8 +1208,8 @@ class InjectorTest extends TestCase
             'Qubus\Tests\Injector\createTestDelegationSimple'
         );
         $obj = $injector->make('Qubus\Tests\Injector\TestDelegationSimple');
-        $this->assertInstanceOf('Qubus\Tests\Injector\TestDelegationSimple', $obj);
-        $this->assertTrue($obj->delegateCalled);
+        Assert::assertInstanceOf('Qubus\Tests\Injector\TestDelegationSimple', $obj);
+        Assert::assertTrue($obj->delegateCalled);
     }
 
     public function testDelegationDependency()
@@ -1175,8 +1220,8 @@ class InjectorTest extends TestCase
             'Qubus\Tests\Injector\createTestDelegationDependency'
         );
         $obj = $injector->make('Qubus\Tests\Injector\TestDelegationDependency');
-        $this->assertInstanceOf('Qubus\Tests\Injector\TestDelegationDependency', $obj);
-        $this->assertTrue($obj->delegateCalled);
+        Assert::assertInstanceOf('Qubus\Tests\Injector\TestDelegationDependency', $obj);
+        Assert::assertTrue($obj->delegateCalled);
     }
 
     public function testExecutableAliasing()
@@ -1190,7 +1235,7 @@ class InjectorTest extends TestCase
             'Qubus\Tests\Injector\BaseExecutableClass',
             'foo',
         ]);
-        $this->assertEquals('This is the ExtendsExecutableClass', $result);
+        Assert::assertEquals('This is the ExtendsExecutableClass', $result);
     }
 
     public function testExecutableAliasingStatic()
@@ -1204,14 +1249,14 @@ class InjectorTest extends TestCase
             'Qubus\Tests\Injector\BaseExecutableClass',
             'bar',
         ]);
-        $this->assertEquals('This is the ExtendsExecutableClass', $result);
+        Assert::assertEquals('This is the ExtendsExecutableClass', $result);
     }
 
     /**
      * Test coverage for delegate closures that are defined outside
      * of a class.ph
      *
-     * @throws \Qubus\Injector\ConfigException
+     * @throws ConfigException
      */
     public function testDelegateClosure()
     {
@@ -1219,7 +1264,7 @@ class InjectorTest extends TestCase
         $injector        = new Injector(Factory::create([]));
         $injector->delegate('Qubus\Tests\Injector\DelegateClosureInGlobalScope', $delegateClosure);
         $obj = $injector->make('Qubus\Tests\Injector\DelegateClosureInGlobalScope');
-        $this->assertInstanceOf('Qubus\Tests\Injector\DelegateClosureInGlobalScope', $obj);
+        Assert::assertInstanceOf('Qubus\Tests\Injector\DelegateClosureInGlobalScope', $obj);
     }
 
     public function testCloningWithServiceLocator()
@@ -1229,17 +1274,15 @@ class InjectorTest extends TestCase
         $instance    = $injector->make('Qubus\Tests\Injector\CloneTest');
         $newInjector = $instance->injector;
         $newInstance = $newInjector->make('Qubus\Tests\Injector\CloneTest');
-        $this->assertInstanceOf('Qubus\Tests\Injector\CloneTest', $instance);
-        $this->assertInstanceOf('Qubus\Tests\Injector\CloneTest', $newInstance);
+        Assert::assertInstanceOf('Qubus\Tests\Injector\CloneTest', $instance);
+        Assert::assertInstanceOf('Qubus\Tests\Injector\CloneTest', $newInstance);
     }
 
     public function testAbstractExecute()
     {
         $injector = new Injector(Factory::create([]));
 
-        $fn = function () {
-            return new ConcreteExexcuteTest();
-        };
+        $fn = fn () => new ConcreteExecuteTest();
 
         $injector->delegate('Qubus\Tests\Injector\AbstractExecuteTest', $fn);
         $result = $injector->execute([
@@ -1247,31 +1290,19 @@ class InjectorTest extends TestCase
             'process',
         ]);
 
-        $this->assertEquals('Concrete', $result);
+        Assert::assertEquals('Concrete', $result);
     }
 
     /**
-     * @expectedException \Qubus\Injector\InjectionException
-     * @expectedExceptionCode \Qubus\Injector\InjectorException::E_MAKING_FAILED
+     * @expectedException InjectionException
+     * @expectedExceptionCode InjectorException::E_MAKING_FAILED
      */
     public function testDelegationDoesntMakeObject()
     {
+        $this->expectException(TypeError::class);
+
         $delegate = function () {
             return null;
-        };
-        $injector = new Injector(Factory::create([]));
-        $injector->delegate('Qubus\Tests\Injector\SomeClassName', $delegate);
-        $injector->make('Qubus\Tests\Injector\SomeClassName');
-    }
-
-    /**
-     * @expectedException \Qubus\Injector\InjectionException
-     * @expectedExceptionCode \Qubus\Injector\InjectorException::E_MAKING_FAILED
-     */
-    public function testDelegationDoesntMakeObjectMakesString()
-    {
-        $delegate = function () {
-            return 'ThisIsNotAClass';
         };
         $injector = new Injector(Factory::create([]));
         $injector->delegate('Qubus\Tests\Injector\SomeClassName', $delegate);
@@ -1289,7 +1320,7 @@ class InjectorTest extends TestCase
             }
         );
         $actual = $injector->make('Qubus\Tests\Injector\SomeImplementation');
-        $this->assertSame($expected, $actual);
+        Assert::assertSame($expected, $actual);
     }
 
     public function testPrepareCallableReplacesObjectWithReturnValueOfSameClassType()
@@ -1303,7 +1334,7 @@ class InjectorTest extends TestCase
             }
         );
         $actual = $injector->make('Qubus\Tests\Injector\SomeImplementation');
-        $this->assertSame($expected, $actual);
+        Assert::assertSame($expected, $actual);
     }
 
     public function testChildWithoutConstructorWorks()
@@ -1317,10 +1348,10 @@ class InjectorTest extends TestCase
             $injector->share('Qubus\Tests\Injector\ChildWithoutConstructor');
 
             $child = $injector->make('Qubus\Tests\Injector\ChildWithoutConstructor');
-            $this->assertEquals('child', $child->foo);
+            Assert::assertEquals('child', $child->foo);
 
             $parent = $injector->make('Qubus\Tests\Injector\ParentWithConstructor');
-            $this->assertEquals('parent', $parent->foo);
+            Assert::assertEquals('parent', $parent->foo);
         } catch (InjectionException $ie) {
             echo $ie->getMessage();
             $this->fail('Auryn failed to locate the ');
@@ -1328,11 +1359,14 @@ class InjectorTest extends TestCase
     }
 
     /**
-     * @expectedException \Qubus\Injector\InjectionException
-     * @expectedExceptionCode \Qubus\Injector\InjectorException::E_UNDEFINED_PARAM
+     * @expectedException InjectionException
+     * @expectedExceptionCode InjectorException::E_UNDEFINED_PARAM
      */
     public function testChildWithoutConstructorMissingParam()
     {
+        $this->expectException(InjectionException::class);
+        $this->expectExceptionCode(InjectorException::E_UNDEFINED_PARAM);
+
         $injector = new Injector(Factory::create([]));
         $injector->define('Qubus\Tests\Injector\ParentWithConstructor', [':foo' => 'parent']);
         $injector->make('Qubus\Tests\Injector\ChildWithoutConstructor');
@@ -1360,8 +1394,8 @@ class InjectorTest extends TestCase
         $injector->delegate('Qubus\Injector\InjectionChain', [$injector, 'getInjectionChain']);
 
         $object = $injector->make('Qubus\Tests\Injector\InjectionChainTest');
-        $this->assertEquals($object->icv->value, 'unknown value');
-        $this->assertEquals($object->dependency->icv->value, 'unknown value');
+        Assert::assertEquals($object->icv->value, 'unknown value');
+        Assert::assertEquals($object->dependency->icv->value, 'unknown value');
     }
 }
 
@@ -2092,7 +2126,7 @@ abstract class AbstractExecuteTest
     }
 }
 
-class ConcreteExexcuteTest extends AbstractExecuteTest
+class ConcreteExecuteTest extends AbstractExecuteTest
 {
     public function process()
     {

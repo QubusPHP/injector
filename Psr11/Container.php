@@ -4,7 +4,8 @@
  * Qubus\Injector
  *
  * @link       https://github.com/QubusPHP/injector
- * @copyright  2020 Joshua Parker
+ * @copyright  2020 Joshua Parker <josh@joshuaparker.blog>
+ * @copyright  2013-2014 Daniel Lowrey, Levi Morrison, Dan Ackroyd
  * @license    https://opensource.org/licenses/mit-license.php MIT License
  *
  * @since      1.0.0
@@ -22,6 +23,7 @@ use ReflectionClass;
 
 use function array_filter;
 use function class_exists;
+use function sprintf;
 
 class Container extends Injector implements ContainerInterface
 {
@@ -34,7 +36,7 @@ class Container extends Injector implements ContainerInterface
     {
         if (! $this->has($id)) {
             throw new NotFoundException(
-                'No entry found: ' . $id
+                sprintf('No entry found: %s', $id)
             );
         }
 
@@ -42,7 +44,7 @@ class Container extends Injector implements ContainerInterface
             return $this->make($id);
         } catch (Exception $previous) {
             throw new ContainerException(
-                'Unable to get: ' . $id,
+                sprintf('Unable to get: %s', $id),
                 0,
                 $previous
             );
@@ -52,7 +54,7 @@ class Container extends Injector implements ContainerInterface
     /**
      * {@inheritDoc}
      */
-    public function has($id)
+    public function has(string $id): bool
     {
         static $filter = Injector::I_BINDINGS
         | Injector::I_DELEGATES

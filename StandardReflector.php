@@ -4,7 +4,8 @@
  * Qubus\Injector
  *
  * @link       https://github.com/QubusPHP/injector
- * @copyright  2020 Joshua Parker
+ * @copyright  2020 Joshua Parker <josh@joshuaparker.blog>
+ * @copyright  2013-2014 Daniel Lowrey, Levi Morrison, Dan Ackroyd
  * @license    https://opensource.org/licenses/mit-license.php MIT License
  *
  * @since      1.0.0
@@ -14,13 +15,13 @@ declare(strict_types=1);
 
 namespace Qubus\Injector;
 
+use Closure;
 use ReflectionClass;
 use ReflectionFunction;
 use ReflectionFunctionAbstract;
 use ReflectionMethod;
 use ReflectionParameter;
 
-use function get_class;
 use function is_string;
 
 use const PHP_VERSION_ID;
@@ -30,7 +31,7 @@ class StandardReflector implements Reflector
     /**
      * {@inheritDoc}
      */
-    public function getClass($class)
+    public function getClass(string|object $class): ReflectionClass
     {
         return new ReflectionClass($class);
     }
@@ -38,7 +39,7 @@ class StandardReflector implements Reflector
     /**
      * {@inheritDoc}
      */
-    public function getConstructor($class)
+    public function getConstructor(string|object $class): ?ReflectionMethod
     {
         $reflectionClass = new ReflectionClass($class);
 
@@ -48,7 +49,7 @@ class StandardReflector implements Reflector
     /**
      * {@inheritDoc}
      */
-    public function getConstructorParams($class)
+    public function getConstructorParams(string|object $class)
     {
         $reflectedConstructor = $this->getConstructor($class);
 
@@ -60,7 +61,7 @@ class StandardReflector implements Reflector
     /**
      * {@inheritDoc}
      */
-    public function getParamTypeHint(ReflectionFunctionAbstract $function, ReflectionParameter $param)
+    public function getParamTypeHint(ReflectionFunctionAbstract $function, ReflectionParameter $param): ?string
     {
         if (PHP_VERSION_ID >= 80000) {
             $reflectionClass = $param->getType() ? (string) $param->getType() : null;
@@ -77,7 +78,7 @@ class StandardReflector implements Reflector
     /**
      * {@inheritDoc}
      */
-    public function getFunction($functionName)
+    public function getFunction(string|Closure $functionName): ReflectionFunction
     {
         return new ReflectionFunction($functionName);
     }
@@ -85,11 +86,11 @@ class StandardReflector implements Reflector
     /**
      * {@inheritDoc}
      */
-    public function getMethod($classNameOrInstance, $methodName)
+    public function getMethod(string|object $classNameOrInstance, string $methodName): ReflectionMethod
     {
         $className = is_string($classNameOrInstance)
         ? $classNameOrInstance
-        : get_class($classNameOrInstance);
+        : $classNameOrInstance::class;
 
         return new ReflectionMethod($className, $methodName);
     }

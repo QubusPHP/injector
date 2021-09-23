@@ -4,7 +4,8 @@
  * Qubus\Injector
  *
  * @link       https://github.com/QubusPHP/injector
- * @copyright  2020 Joshua Parker
+ * @copyright  2020 Joshua Parker <josh@joshuaparker.blog>
+ * @copyright  2013-2014 Daniel Lowrey, Levi Morrison, Dan Ackroyd
  * @license    https://opensource.org/licenses/mit-license.php MIT License
  *
  * @since      1.0.0
@@ -147,7 +148,7 @@ class Injector
      * @throws InvalidMappingsException If a needed key could not be read from the config file.
      * @throws InvalidMappingsException If the dependency injector could not be set up.
      */
-    public function registerMappings(Config $config)
+    public function registerMappings(Config $config): void
     {
         $configKeys = [
             static::STANDARD_ALIASES     => 'mapAliases',
@@ -192,11 +193,11 @@ class Injector
     /**
      * Map Interfaces to concrete classes for our Injector.
      *
-     * @param string $class     Concrete implementation to instantiate.
-     * @param string $interface Alias to register the implementation for.
+     * @param string|object $class Concrete implementation to instantiate.
+     * @param string $interface    Alias to register the implementation for.
      * @throws ConfigException If the alias could not be created.
      */
-    protected function mapAliases($class, $interface)
+    protected function mapAliases($class, $interface): void
     {
         if ($class === $interface) {
             return;
@@ -207,8 +208,8 @@ class Injector
     /**
      * Tell our Injector which interfaces to share across all requests.
      *
-     * @param string $class     Concrete implementation to instantiate.
-     * @param string $interface Alias to register the implementation for.
+     * @param string|object $class Concrete implementation to instantiate.
+     * @param string $interface    Alias to register the implementation for.
      * @throws ConfigException If the interface could not be shared.
      */
     protected function shareAliases($class, $interface)
@@ -258,8 +259,8 @@ class Injector
     /**
      * Tell our Injector how to produce required arguments.
      *
-     * @param string $argumentSetup Argument providers setup from configuration file.
-     * @param string $argument      The argument to provide.
+     * @param array $argumentSetup Argument providers setup from configuration file.
+     * @param string $argument     The argument to provide.
      * @throws InvalidMappingsException If a required config key could not be found.
      */
     protected function defineArgumentProviders($argumentSetup, $argument)
@@ -440,7 +441,7 @@ class Injector
      * @throws ConfigException if $nameOrInstance is not a string or an object
      * @return self
      */
-    public function share($nameOrInstance)
+    public function share(string|object $nameOrInstance)
     {
         if (is_string($nameOrInstance)) {
             $this->shareClass($nameOrInstance);
@@ -503,7 +504,7 @@ class Injector
      * @param string $name
      * @param mixed $callableOrMethodStr Any callable or provisionable invokable method
      * @throws InjectionException if $callableOrMethodStr is not a callable.
-     *                            See https://github.com/rdlowrey/auryn#injecting-for-execution
+     *                            See https://docs.stalframework.com/injector/#injecting-for-execution
      * @return self
      */
     public function prepare($name, $callableOrMethodStr)
@@ -565,7 +566,7 @@ class Injector
      * @param int    $typeFilter A bitmask of Injector::* type constant flags.
      * @return array
      */
-    public function inspect($nameFilter = null, $typeFilter = null)
+    public function inspect(?string $nameFilter = null, ?int $typeFilter = null)
     {
         $result = [];
         $name = $nameFilter ? $this->normalizeName($nameFilter) : null;
@@ -910,7 +911,7 @@ class Injector
             }
         }
 
-        $interfaces = @class_implements($obj);
+        $interfaces = class_implements($obj);
 
         if ($interfaces === false) {
             throw new InjectionException(

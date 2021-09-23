@@ -4,7 +4,8 @@
  * Qubus\Injector
  *
  * @link       https://github.com/QubusPHP/injector
- * @copyright  2020 Joshua Parker
+ * @copyright  2020 Joshua Parker <josh@joshuaparker.blog>
+ * @copyright  2013-2014 Daniel Lowrey, Levi Morrison, Dan Ackroyd
  * @license    https://opensource.org/licenses/mit-license.php MIT License
  *
  * @since      1.0.0
@@ -29,7 +30,7 @@ use const PHP_VERSION;
 class Executable
 {
     /** @var ReflectionFunctionAbstract $callableReflection */
-    private $callableReflection;
+    private ReflectionFunctionAbstract $callableReflection;
 
     /** @var mixed $invocationObject */
     private $invocationObject;
@@ -93,17 +94,20 @@ class Executable
         }
     }
 
-    public function getCallableReflection()
+    public function getCallableReflection(): ReflectionFunctionAbstract
     {
         return $this->callableReflection;
     }
 
+    /**
+     * @return ReflectionFunctionAbstract
+     */
     public function getInvocationObject()
     {
         return $this->invocationObject;
     }
 
-    public function isInstanceMethod()
+    public function isInstanceMethod(): bool
     {
         return $this->isInstanceMethod;
     }
