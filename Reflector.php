@@ -15,12 +15,12 @@ declare(strict_types=1);
 
 namespace Qubus\Injector;
 
+use Closure;
 use ReflectionClass;
 use ReflectionFunction;
 use ReflectionFunctionAbstract;
 use ReflectionMethod;
 use ReflectionParameter;
-use Closure;
 
 interface Reflector
 {

@@ -15,19 +15,18 @@ declare(strict_types=1);
 
 namespace Qubus\Injector\Cache;
 
+use Closure;
 use Qubus\Injector\Reflector;
 use Qubus\Injector\StandardReflector;
+use ReflectionClass;
+use ReflectionFunction;
 use ReflectionFunctionAbstract;
 use ReflectionMethod;
 use ReflectionParameter;
 
-use function get_class;
 use function is_string;
 use function strpos;
 use function strtolower;
-use ReflectionFunction;
-use ReflectionClass;
-use Closure;
 
 class CachingReflector implements Reflector
 {
@@ -145,7 +144,7 @@ class CachingReflector implements Reflector
     {
         $className = is_string($classNameOrInstance)
         ? $classNameOrInstance
-        : get_class($classNameOrInstance);
+        : $classNameOrInstance::class;
 
         $cacheKey = self::CACHE_KEY_METHODS . strtolower($className) . '.' . strtolower($methodName);
 

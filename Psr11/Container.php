@@ -23,6 +23,7 @@ use ReflectionClass;
 
 use function array_filter;
 use function class_exists;
+use function sprintf;
 
 class Container extends Injector implements ContainerInterface
 {
@@ -53,7 +54,7 @@ class Container extends Injector implements ContainerInterface
     /**
      * {@inheritDoc}
      */
-    public function has($id)
+    public function has(string $id): bool
     {
         static $filter = Injector::I_BINDINGS
         | Injector::I_DELEGATES

@@ -15,17 +15,16 @@ declare(strict_types=1);
 
 namespace Qubus\Injector;
 
+use Closure;
 use ReflectionClass;
 use ReflectionFunction;
 use ReflectionFunctionAbstract;
 use ReflectionMethod;
 use ReflectionParameter;
 
-use function get_class;
 use function is_string;
 
 use const PHP_VERSION_ID;
-use Closure;
 
 class StandardReflector implements Reflector
 {
@@ -91,7 +90,7 @@ class StandardReflector implements Reflector
     {
         $className = is_string($classNameOrInstance)
         ? $classNameOrInstance
-        : get_class($classNameOrInstance);
+        : $classNameOrInstance::class;
 
         return new ReflectionMethod($className, $methodName);
     }
