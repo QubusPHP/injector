@@ -22,6 +22,7 @@ use Qubus\Injector\InjectorException;
 use stdClass;
 use PHPUnit\Framework\Assert;
 use PHPUnit\Framework\TestCase;
+use Qubus\Injector\Config\Config;
 use Qubus\Injector\Config\Factory;
 use Qubus\Injector\ConfigException;
 use TypeError;
@@ -546,14 +547,16 @@ class InjectorTest extends TestCase
 
     public function testUnknownDelegationFunction()
     {
+        $this->expectException(ConfigException::class);
+
         $injector = new Injector(Factory::create([]));
         try {
             $injector->delegate('Qubus\Tests\Injector\DelegatableInterface', 'FunctionWhichDoesNotExist');
             $this->fail("Delegation was supposed to fail.");
-        } catch (InjectorException $ie) {
+        } catch (InjectionException $ie) {
             Assert::assertStringContainsString('FunctionWhichDoesNotExist', $ie->getMessage());
             Assert::assertEquals(
-                InjectorException::E_DELEGATE_ARGUMENT,
+                InjectionException::E_DELEGATE_ARGUMENT,
                 $ie->getCode()
             );
         }
@@ -561,6 +564,8 @@ class InjectorTest extends TestCase
 
     public function testUnknownDelegationMethod()
     {
+        $this->expectException(ConfigException::class);
+
         $injector = new Injector(Factory::create([]));
         try {
             $injector->delegate(
@@ -568,10 +573,10 @@ class InjectorTest extends TestCase
                 ['stdClass', 'methodWhichDoesNotExist']
             );
             $this->fail("Delegation was supposed to fail.");
-        } catch (InjectorException $ie) {
+        } catch (InjectionException $ie) {
             Assert::assertStringContainsString('stdClass', $ie->getMessage());
             Assert::assertStringContainsString('methodWhichDoesNotExist', $ie->getMessage());
-            Assert::assertEquals(InjectorException::E_DELEGATE_ARGUMENT, $ie->getCode());
+            Assert::assertEquals(InjectionException::E_DELEGATE_ARGUMENT, $ie->getCode());
         }
     }
 
@@ -1426,7 +1431,7 @@ class ConfigClass
 
     //use ConfigTrait;
 
-    public function __construct(ConfigInterface $config)
+    public function __construct(Config $config)
     {
         //$this->processConfig($config);
     }
