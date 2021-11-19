@@ -35,7 +35,7 @@ class ApcuReflectionCache implements ReflectionCache
      * @param int $seconds The number of seconds that the cache value should live.
      * @return $this Instance of the cache object.
      */
-    public function setTimeToLive(int $seconds)
+    public function setTimeToLive(int $seconds): ApcuReflectionCache
     {
         $seconds = (int) $seconds;
         $this->timeToLive = $seconds > 0 ? $seconds : $this->timeToLive;
