@@ -19,8 +19,6 @@ interface Serviceable
     /**
      * Other services, extensions, callbacks, etc. that need
      * to be loaded after the called provider is booted.
-     *
-     * @return void
      */
     public function extensions(): void;
 }

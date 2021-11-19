@@ -19,8 +19,6 @@ interface Bootable
     /**
      * Register services that need to be loaded during
      * the booting stage.
-     *
-     * @return void
      */
-    public function boot(): void;
+    public function provides(): void;
 }

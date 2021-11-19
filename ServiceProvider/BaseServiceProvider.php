@@ -28,7 +28,7 @@ abstract class BaseServiceProvider implements Bootable, Serviceable
     /**
      * {@inheritDoc}
      */
-    public function boot(): void
+    public function provides(): void
     {
     }
 
