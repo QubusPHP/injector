@@ -55,7 +55,7 @@ use function strpos;
 use function strtolower;
 use function substr;
 
-class Injector implements ReflectionContainer
+class Injector implements ServiceContainer
 {
     public const A_RAW = ':';
     public const A_DELEGATE = '+';
@@ -75,7 +75,6 @@ class Injector implements ReflectionContainer
     public const DELEGATIONS          = 'delegations';
     public const PREPARATIONS         = 'preparations';
 
-    /** @var Reflector|null $reflector */
     protected ?Reflector $reflector = null;
 
     /** @var array $classDefinitions */
@@ -108,7 +107,6 @@ class Injector implements ReflectionContainer
     /** @var array $argumentDefinitions */
     protected array $argumentDefinitions = [];
 
-    /** @var Config|null $config */
     protected ?Config $config = null;
 
     /**
@@ -351,7 +349,7 @@ class Injector implements ReflectionContainer
     /**
      * {@inheritDoc}
      */
-    public function define(string $name, array $args): ReflectionContainer
+    public function define(string $name, array $args): ServiceContainer
     {
         [, $normalizedName] = $this->resolveAlias($name);
         $this->classDefinitions[$normalizedName] = $args;
@@ -362,7 +360,7 @@ class Injector implements ReflectionContainer
     /**
      * {@inheritDoc}
      */
-    public function defineParam(string $paramName, $value): ReflectionContainer
+    public function defineParam(string $paramName, $value): ServiceContainer
     {
         $this->paramDefinitions[$paramName] = $value;
 
@@ -372,7 +370,7 @@ class Injector implements ReflectionContainer
     /**
      * {@inheritDoc}
      */
-    public function alias(string $original, string $alias): ReflectionContainer
+    public function alias(string $original, string $alias): ServiceContainer
     {
         if (empty($original) || ! is_string($original)) {
             throw new ConfigException(
@@ -419,7 +417,7 @@ class Injector implements ReflectionContainer
     /**
      * {@inheritDoc}
      */
-    public function share(string|object $nameOrInstance): ReflectionContainer
+    public function share(string|object $nameOrInstance): ServiceContainer
     {
         if (is_string($nameOrInstance)) {
             $this->shareClass($nameOrInstance);
@@ -458,7 +456,7 @@ class Injector implements ReflectionContainer
 
     private function shareInstance(object $obj)
     {
-        $normalizedName = $this->normalizeName(get_class($obj));
+        $normalizedName = $this->normalizeName($obj::class);
         if (isset($this->aliases[$normalizedName])) {
             // You cannot share an instance of a class name that is already aliased
             throw new ConfigException(
@@ -476,7 +474,7 @@ class Injector implements ReflectionContainer
     /**
      * {@inheritDoc}
      */
-    public function prepare(string $name, callable|string|array|object $callableOrMethodStr): ReflectionContainer
+    public function prepare(string $name, callable|string|array|object $callableOrMethodStr): ServiceContainer
     {
         if ($this->isExecutable($callableOrMethodStr) === false) {
             throw InjectionException::fromInvalidCallable(
@@ -510,7 +508,7 @@ class Injector implements ReflectionContainer
     /**
      * {@inheritDoc}
      */
-    public function delegate(string $name, callable|string|array|object $callableOrMethodStr): ReflectionContainer
+    public function delegate(string $name, callable|string|array|object $callableOrMethodStr): ServiceContainer
     {
         if ($this->isExecutable($callableOrMethodStr) === false) {
             $this->generateInvalidCallableError($callableOrMethodStr);
@@ -570,7 +568,7 @@ class Injector implements ReflectionContainer
     /**
      * {@inheritDoc}
      */
-    public function proxy(string $name, callable|string|array|object $callableOrMethodStr): ReflectionContainer
+    public function proxy(string $name, callable|string|array|object $callableOrMethodStr): ServiceContainer
     {
         if (! $this->isExecutable($callableOrMethodStr)) {
             $this->generateInvalidCallableError($callableOrMethodStr);
@@ -649,8 +647,6 @@ class Injector implements ReflectionContainer
     }
 
     /**
-     * @param string $className
-     * @param string $normalizedClass
      * @param array $args
      * @return mixed|object
      * @throws InjectionException
@@ -897,7 +893,7 @@ class Injector implements ReflectionContainer
     }
 
     /**
-     *{@inheritDoc}
+     * {@inheritDoc}
      */
     public function execute(callable|string|array|object $callableOrMethodStr, array $args = [])
     {
@@ -913,7 +909,6 @@ class Injector implements ReflectionContainer
      *
      * @param callable|string|array|object $callableOrMethodStr A valid PHP callable
      *                                                          or a provisionable ClassName::methodName string.
-     * @return Executable
      * @throws InjectionException If the Executable structure could not be built.
      */
     public function buildExecutable(callable|string|array|object $callableOrMethodStr): Executable
