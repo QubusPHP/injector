@@ -11,20 +11,24 @@
  * @since      1.0.0
  */
 
-
 namespace Qubus\Tests\Injector;
 
-use Qubus\Injector\InjectionException;
-use Qubus\Injector\InjectionChain;
-use Qubus\Injector\Injector;
-use Qubus\Injector\InjectorException;
-use stdClass;
 use PHPUnit\Framework\Assert;
 use PHPUnit\Framework\TestCase;
 use Qubus\Injector\Config\Config;
 use Qubus\Injector\Config\Factory;
 use Qubus\Injector\ConfigException;
+use Qubus\Injector\InjectionChain;
+use Qubus\Injector\InjectionException;
+use Qubus\Injector\Injector;
+use Qubus\Injector\InjectorException;
+use Qubus\Injector\Psr11\Container;
+use Qubus\Injector\ServiceContainer;
+use Qubus\Injector\ServiceProvider\BaseServiceProvider;
+use stdClass;
 use TypeError;
+
+use const PHP_VERSION_ID;
 
 class InjectorTest extends TestCase
 {
@@ -32,15 +36,15 @@ class InjectorTest extends TestCase
     {
         $injector = new Injector(Factory::create([
             Injector::STANDARD_ALIASES => [
-                'BNFoo' => NotSharedClass::class,
+                'bn.foo' => NotSharedClass::class,
             ],
             Injector::SHARED_ALIASES   => [
                 'BNBar' => SharedClass::class,
             ],
         ]));
 
-        $objFooA  = $injector->make('BNFoo');
-        $objFooB  = $injector->make('BNFoo');
+        $objFooA  = $injector->make('bn.foo');
+        $objFooB  = $injector->make('bn.foo');
         $objBarA  = $injector->make('BNBar');
         $objBarB  = $injector->make('BNBar');
         Assert::assertInstanceOf(
@@ -87,7 +91,7 @@ class InjectorTest extends TestCase
             ],
         ]));
 
-        $obj      = $injector->make(stdClass::class);
+        $obj = $injector->make(stdClass::class);
         Assert::assertInstanceOf(SomeClassName::class, $obj);
     }
 
@@ -95,7 +99,7 @@ class InjectorTest extends TestCase
     {
         $injector = new Injector(Factory::create([
             Injector::PREPARATIONS => [
-                'stdClass' => function ($obj, $injector) {
+                'stdClass'           => function ($obj, $injector) {
                     $obj->testval = 42;
                 },
                 SomeInterface::class => function ($obj, $injector) {
@@ -104,7 +108,7 @@ class InjectorTest extends TestCase
             ],
         ]));
 
-        $obj1     = $injector->make(stdClass::class);
+        $obj1 = $injector->make(stdClass::class);
         Assert::assertSame(42, $obj1->testval);
         $obj2 = $injector->make(PreparesImplementationTest::class);
         Assert::assertSame(42, $obj2->testProp);
@@ -114,7 +118,7 @@ class InjectorTest extends TestCase
     {
         $injector = new Injector(Factory::create([]));
         Assert::assertEquals(
-            new TestNeedsDep(new TestDependency),
+            new TestNeedsDep(new TestDependency()),
             $injector->make(TestNeedsDep::class)
         );
     }
@@ -123,7 +127,7 @@ class InjectorTest extends TestCase
     {
         $injector = new Injector(Factory::create([]));
         Assert::assertEquals(
-            new TestNoConstructor,
+            new TestNoConstructor(),
             $injector->make(TestNoConstructor::class)
         );
     }
@@ -136,7 +140,7 @@ class InjectorTest extends TestCase
             DepImplementation::class
         );
         Assert::assertEquals(
-            new DepImplementation,
+            new DepImplementation(),
             $injector->make(DepInterface::class)
         );
     }
@@ -185,7 +189,7 @@ class InjectorTest extends TestCase
     {
         $injector         = new Injector(Factory::create([]));
         $nullCtorParamObj = $injector->make(ProvTestNoDefinitionNullDefaultClass::class);
-        Assert::assertEquals(new ProvTestNoDefinitionNullDefaultClass, $nullCtorParamObj);
+        Assert::assertEquals(new ProvTestNoDefinitionNullDefaultClass(), $nullCtorParamObj);
         Assert::assertEquals(null, $nullCtorParamObj->arg);
     }
 
@@ -292,8 +296,8 @@ class InjectorTest extends TestCase
      * @expectedException InjectionException
      * @expectedExceptionCode InjectorException::E_UNDEFINED_PARAM
      */
-    public function testMakeInstanceThrowsExceptionOnUntypehintedParameterWithoutDefinitionOrDefaultThroughAliasedTypehint(
-    ) {
+    public function testMakeInstanceThrowsExceptionOnUntypehintedParameterWithoutDefinitionOrDefaultThroughAliasedTypehint()
+    {
         $this->expectException(InjectionException::class);
         $this->expectExceptionCode(InjectorException::E_UNDEFINED_PARAM);
 
@@ -306,7 +310,7 @@ class InjectorTest extends TestCase
     }
 
     /**
-     * @TODO
+     * @todo
      * @expectedException InjectorException
      */
     public function testMakeInstanceThrowsExceptionOnUninstantiableTypehintWithoutDefinition()
@@ -353,7 +357,7 @@ class InjectorTest extends TestCase
             InjectorTestRawCtorParams::class,
             [
                 ':string' => 'string',
-                ':obj'    => new stdClass,
+                ':obj'    => new stdClass(),
                 ':int'    => 42,
                 ':array'  => [],
                 ':float'  => 9.3,
@@ -403,7 +407,7 @@ class InjectorTest extends TestCase
         $injector = new Injector(Factory::create([]));
         $injector->delegate(
             stdClass::class,
-            StringstdClassDelegateMock::class
+            StringStdClassDelegateMock::class
         );
         $obj = $injector->make(stdClass::class);
         Assert::assertEquals(42, $obj->test);
@@ -462,7 +466,7 @@ class InjectorTest extends TestCase
     public function testShareStoresSharedInstanceAndReturnsCurrentInstance()
     {
         $injector        = new Injector(Factory::create([]));
-        $testShare       = new stdClass;
+        $testShare       = new stdClass();
         $testShare->test = 42;
 
         Assert::assertInstanceOf(
@@ -497,7 +501,7 @@ class InjectorTest extends TestCase
     public function provideInvalidDelegates()
     {
         return [
-            [new stdClass],
+            [new stdClass()],
             [42],
             [true],
         ];
@@ -604,7 +608,7 @@ class InjectorTest extends TestCase
 
         // 1 -------------------------------------------------------------------------------------->
 
-        $toInvoke       = [new ExecuteClassNoDeps, 'execute'];
+        $toInvoke       = [new ExecuteClassNoDeps(), 'execute'];
         $args           = [];
         $expectedResult = 42;
         $return[]       = [$toInvoke, $args, $expectedResult];
@@ -622,7 +626,7 @@ class InjectorTest extends TestCase
         // 3 -------------------------------------------------------------------------------------->
 
         $toInvoke       = [
-            new ExecuteClassDeps(new TestDependency),
+            new ExecuteClassDeps(new TestDependency()),
             'execute',
         ];
         $args           = [];
@@ -651,7 +655,7 @@ class InjectorTest extends TestCase
 
         // 6 -------------------------------------------------------------------------------------->
 
-        $toInvoke       = [new ExecuteClassStaticMethod, 'execute'];
+        $toInvoke       = [new ExecuteClassStaticMethod(), 'execute'];
         $args           = [];
         $expectedResult = 42;
         $return[]       = [$toInvoke, $args, $expectedResult];
@@ -691,7 +695,7 @@ class InjectorTest extends TestCase
 
         // 11 ------------------------------------------------------------------------------------->
 
-        $toInvoke       = new ExecuteClassInvokable;
+        $toInvoke       = new ExecuteClassInvokable();
         $args           = [];
         $expectedResult = 42;
         $return[]       = [$toInvoke, $args, $expectedResult];
@@ -1316,7 +1320,7 @@ class InjectorTest extends TestCase
     public function testPrepareCallableReplacesObjectWithReturnValueOfSameInterfaceType()
     {
         $injector = new Injector(Factory::create([]));
-        $expected = new SomeImplementation; // <-- implements SomeInterface
+        $expected = new SomeImplementation(); // <-- implements SomeInterface
         $injector->prepare(
             SomeInterface::class,
             function ($impl) use ($expected) {
@@ -1330,7 +1334,7 @@ class InjectorTest extends TestCase
     public function testPrepareCallableReplacesObjectWithReturnValueOfSameClassType()
     {
         $injector = new Injector(Factory::create([]));
-        $expected = new SomeImplementation; // <-- implements SomeInterface
+        $expected = new SomeImplementation(); // <-- implements SomeInterface
         $injector->prepare(
             SomeImplementation::class,
             function ($impl) use ($expected) {
@@ -1379,11 +1383,13 @@ class InjectorTest extends TestCase
     public function testInjectionChainValue()
     {
         $fn = function (InjectionChain $ic) {
-            if ($ic->getByIndex(-2) ===
+            if (
+                $ic->getByIndex(-2) ===
                 InjectionChainTestDependency::class
             ) {
                 return new InjectionChainValue('Value for dependency');
-            } elseif ($ic->getByIndex(-2) ===
+            } elseif (
+                $ic->getByIndex(-2) ===
                        InjectionChainTest::class
             ) {
                 return new InjectionChainValue('Value for parent');
@@ -1400,6 +1406,21 @@ class InjectorTest extends TestCase
         $object = $injector->make(InjectionChainTest::class);
         Assert::assertEquals($object->icv->value, 'unknown value');
         Assert::assertEquals($object->dependency->icv->value, 'unknown value');
+    }
+
+    public function testServiceProvider()
+    {
+        $injector = new Container(Factory::create([]));
+
+        $service = new FakeServiceProvider();
+        $service->provides($injector);
+
+        $name = new Person('Joseph Smith');
+
+        $injected = $injector->make('user.model');
+
+        Assert::assertEquals($name, $injected->userName());
+        Assert::assertInstanceOf(Person::class, $injected->userName());
     }
 }
 
@@ -1427,7 +1448,6 @@ interface DelegatableInterface
 
 class ConfigClass
 {
-
     //use ConfigTrait;
 
     public function __construct(Config $config)
@@ -1800,7 +1820,7 @@ class StringStdClassDelegateMock
 
     private function make()
     {
-        $obj       = new \StdClass;
+        $obj       = new stdClass();
         $obj->test = 42;
 
         return $obj;
@@ -1839,7 +1859,7 @@ class ExecuteClassDepsWithMethodDeps
 
     public function execute(TestDependency $dep, $arg = null)
     {
-        return isset($arg) ? $arg : 42;
+        return $arg ?? 42;
     }
 }
 
@@ -1885,7 +1905,7 @@ class CallableDelegateClassTest
 {
     public function __invoke()
     {
-        return new MadeByDelegate;
+        return new MadeByDelegate();
     }
 }
 
@@ -1930,7 +1950,7 @@ class NonConcreteDependencyWithDefaultValue
 {
     public $interface;
 
-    public function __construct(DelegatableInterface $i = null)
+    public function __construct(?DelegatableInterface $i = null)
     {
         $this->interface = $i;
     }
@@ -1940,7 +1960,7 @@ class ConcreteDependencyWithDefaultValue
 {
     public $dependency;
 
-    public function __construct(\StdClass $instance = null)
+    public function __construct(?stdClass $instance = null)
     {
         $this->dependency = $instance;
     }
@@ -2042,7 +2062,7 @@ class TestDelegationDependency
 
 function createTestDelegationSimple()
 {
-    $instance                 = new TestDelegationSimple;
+    $instance                 = new TestDelegationSimple();
     $instance->delegateCalled = true;
 
     return $instance;
@@ -2093,11 +2113,9 @@ class ReturnsCallable
 
     public function getCallable()
     {
-        $callable = function () {
+        return function () {
             return $this->value;
         };
-
-        return $callable;
     }
 }
 
@@ -2190,5 +2208,43 @@ class InjectionChainTest
     ) {
         $this->dependency = $ictd;
         $this->icv        = $icv;
+    }
+}
+
+interface Model
+{
+    public function userName(): Name;
+}
+
+interface Name
+{
+}
+
+class Person implements Name
+{
+    public function __construct(protected ?string $userName = null)
+    {
+    }
+}
+
+class UserModel implements Model
+{
+    public function __construct(
+        protected ?Name $userName = null
+    ) {
+    }
+
+    public function userName(): Name
+    {
+        return $this->userName;
+    }
+}
+
+class FakeServiceProvider extends BaseServiceProvider
+{
+    public function provides(ServiceContainer $container): void
+    {
+        $container->alias('user.model', UserModel::class)
+            ->define('user.model', [':userName' => new Person('Joseph Smith')]);
     }
 }
