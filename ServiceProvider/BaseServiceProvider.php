@@ -14,28 +14,21 @@ declare(strict_types=1);
 
 namespace Qubus\Injector\ServiceProvider;
 
-use Qubus\Config\ConfigContainer;
-use Qubus\Injector\ReflectionContainer;
+use Qubus\Injector\ServiceContainer;
 
 abstract class BaseServiceProvider implements Bootable, Serviceable
 {
-    public function __construct(
-        protected ReflectionContainer $reflector,
-        protected ConfigContainer $config
-    ) {
-    }
-
     /**
      * {@inheritDoc}
      */
-    public function provides(): void
+    public function provides(ServiceContainer $container): void
     {
     }
 
     /**
      * {@inheritDoc}
      */
-    public function extensions(): void
+    public function extensions(ServiceContainer $container): void
     {
     }
 }

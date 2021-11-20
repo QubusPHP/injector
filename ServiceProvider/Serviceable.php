@@ -14,11 +14,13 @@ declare(strict_types=1);
 
 namespace Qubus\Injector\ServiceProvider;
 
+use Qubus\Injector\ServiceContainer;
+
 interface Serviceable
 {
     /**
      * Other services, extensions, callbacks, etc. that need
      * to be loaded after the called provider is booted.
      */
-    public function extensions(): void;
+    public function extensions(ServiceContainer $container): void;
 }
