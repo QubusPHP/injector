@@ -1413,7 +1413,7 @@ class InjectorTest extends TestCase
         $injector = new Container(Factory::create([]));
 
         $service = new FakeServiceProvider();
-        $service->provides($injector);
+        $service->register($injector);
 
         $name = new Person('Joseph Smith');
 
@@ -2242,7 +2242,7 @@ class UserModel implements Model
 
 class FakeServiceProvider extends BaseServiceProvider
 {
-    public function provides(ServiceContainer $container): void
+    public function register(ServiceContainer $container): void
     {
         $container->alias('user.model', UserModel::class)
             ->define('user.model', [':userName' => new Person('Joseph Smith')]);

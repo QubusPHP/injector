@@ -16,19 +16,19 @@ namespace Qubus\Injector\ServiceProvider;
 
 use Qubus\Injector\ServiceContainer;
 
-abstract class BaseServiceProvider implements Bootable, Serviceable
+abstract class BaseServiceProvider implements Serviceable, Bootable
 {
     /**
      * {@inheritDoc}
      */
-    public function provides(ServiceContainer $container): void
+    public function register(ServiceContainer $container): void
     {
     }
 
     /**
      * {@inheritDoc}
      */
-    public function extensions(ServiceContainer $container): void
+    public function boot(ServiceContainer $container): void
     {
     }
 }

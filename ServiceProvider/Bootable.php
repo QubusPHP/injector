@@ -19,8 +19,8 @@ use Qubus\Injector\ServiceContainer;
 interface Bootable
 {
     /**
-     * Register services that need to be loaded during
-     * the booting stage.
+     * Other services, extensions, callbacks, etc. that need
+     * to be loaded after the called provider is booted.
      */
-    public function provides(ServiceContainer $container): void;
+    public function boot(ServiceContainer $container): void;
 }
