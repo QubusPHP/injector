@@ -32,7 +32,7 @@ class Container extends Injector implements ContainerInterface
     /**
      * {@inheritDoc}
      */
-    public function get($id)
+    public function get(string $id)
     {
         if (! $this->has($id)) {
             throw new NotFoundException(

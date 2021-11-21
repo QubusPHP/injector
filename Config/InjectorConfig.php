@@ -66,7 +66,7 @@ class InjectorConfig extends ArrayObject implements Config
     /**
      * {@inheritDoc}
      */
-    public function get($key, $default = null)
+    public function get(string $key, $default = null): string|array
     {
         $this->default = $default;
 
@@ -81,7 +81,7 @@ class InjectorConfig extends ArrayObject implements Config
     /**
      * {@inheritDoc}
      */
-    public function has($key): bool
+    public function has(string $key): bool
     {
         $this->temp = $this->search($this->storage, $key, $this->default);
         $this->default = null;
@@ -91,7 +91,7 @@ class InjectorConfig extends ArrayObject implements Config
     /**
      * {@inheritDoc}
      */
-    public function add($key, $value)
+    public function add($key, $value): InjectorConfig
     {
         $this->storage[ $key ] = $value;
         parent::exchangeArray($this->storage);
@@ -101,7 +101,7 @@ class InjectorConfig extends ArrayObject implements Config
     /**
      * {@inheritDoc}
      */
-    public function remove(...$withKeys)
+    public function remove(...$withKeys): InjectorConfig
     {
         foreach ($withKeys as $keys) {
             foreach ((array) $keys as $k) {
@@ -116,7 +116,7 @@ class InjectorConfig extends ArrayObject implements Config
     /**
      * {@inheritDoc}
      */
-    public function merge(...$arrayToMerge)
+    public function merge(...$arrayToMerge): InjectorConfig
     {
         foreach ($arrayToMerge as $key => $arr) {
             if ($arr instanceof Traversable) {
@@ -155,14 +155,11 @@ class InjectorConfig extends ArrayObject implements Config
     }
 
     /**
-     * @link https://github.com/balambasik/input/blob/master/src/Input.php
-     *
      * @param array $array
-     * @param string|int $key
      * @param mixed $default
      * @return mixed
      */
-    private static function search(array $array, $key, $default = null)
+    private static function search(array $array, string|int $key, $default = null)
     {
         if (is_int($key) || strripos($key, self::$delimiter) === false) {
             return array_key_exists($key, $array) ? $array[ $key ] : $default;

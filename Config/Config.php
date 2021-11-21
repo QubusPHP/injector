@@ -20,16 +20,12 @@ interface Config
     /**
      * Retuns configuration value. If doesn't exist, return the set default value.
      *
-     * @param string $key
      * @param mixed $default
-     * @return string|array
      */
-    public function get($key, $default = null);
+    public function get(string $key, $default = null): string|array;
 
     /**
      * Checks if key value exists.
-     *
-     * @param string $key
      */
-    public function has($key): bool;
+    public function has(string $key): bool;
 }

@@ -37,7 +37,7 @@ class Executable
 
     private bool $isInstanceMethod;
 
-    public function __construct(ReflectionFunctionAbstract $reflFunc, $invocationObject = null)
+    public function __construct(ReflectionFunctionAbstract $reflFunc, ?object $invocationObject = null)
     {
         if ($reflFunc instanceof ReflectionMethod) {
             $this->isInstanceMethod = true;
@@ -48,7 +48,7 @@ class Executable
         }
     }
 
-    private function setMethodCallable(ReflectionMethod $reflection, $invocationObject)
+    private function setMethodCallable(ReflectionMethod $reflection, ?object $invocationObject)
     {
         if (is_object($invocationObject)) {
             $this->callableReflection = $reflection;
