@@ -22,9 +22,6 @@ use Qubus\Injector\InjectionChain;
 use Qubus\Injector\InjectionException;
 use Qubus\Injector\Injector;
 use Qubus\Injector\InjectorException;
-use Qubus\Injector\Psr11\Container;
-use Qubus\Injector\ServiceContainer;
-use Qubus\Injector\ServiceProvider\BaseServiceProvider;
 use stdClass;
 use TypeError;
 
@@ -1407,21 +1404,6 @@ class InjectorTest extends TestCase
         Assert::assertEquals($object->icv->value, 'unknown value');
         Assert::assertEquals($object->dependency->icv->value, 'unknown value');
     }
-
-    public function testServiceProvider()
-    {
-        $injector = new Container(Factory::create([]));
-
-        $service = new FakeServiceProvider();
-        $service->register($injector);
-
-        $name = new Person('Joseph Smith');
-
-        $injected = $injector->make('user.model');
-
-        Assert::assertEquals($name, $injected->userName());
-        Assert::assertInstanceOf(Person::class, $injected->userName());
-    }
 }
 
 interface SharedAliasedInterface
@@ -2208,43 +2190,5 @@ class InjectionChainTest
     ) {
         $this->dependency = $ictd;
         $this->icv        = $icv;
-    }
-}
-
-interface Model
-{
-    public function userName(): Name;
-}
-
-interface Name
-{
-}
-
-class Person implements Name
-{
-    public function __construct(protected ?string $userName = null)
-    {
-    }
-}
-
-class UserModel implements Model
-{
-    public function __construct(
-        protected ?Name $userName = null
-    ) {
-    }
-
-    public function userName(): Name
-    {
-        return $this->userName;
-    }
-}
-
-class FakeServiceProvider extends BaseServiceProvider
-{
-    public function register(ServiceContainer $container): void
-    {
-        $container->alias('user.model', UserModel::class)
-            ->define('user.model', [':userName' => new Person('Joseph Smith')]);
     }
 }
