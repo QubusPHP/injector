@@ -19,9 +19,9 @@ use Qubus\Injector\ServiceProvider\BaseServiceProvider;
 
 class FakeServiceProvider extends BaseServiceProvider
 {
-    public function register(ServiceContainer $container): void
+    public function register(): void
     {
-        $container->alias('user.model', UserModel::class)
+        $this->container->alias('user.model', UserModel::class)
             ->define('user.model', [':userName' => new Person('Joseph Smith')]);
     }
 }
