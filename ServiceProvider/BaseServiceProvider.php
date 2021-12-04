@@ -18,17 +18,21 @@ use Qubus\Injector\ServiceContainer;
 
 abstract class BaseServiceProvider implements Serviceable, Bootable
 {
+    public function __construct(protected ServiceContainer $container)
+    {
+    }
+    
     /**
      * {@inheritDoc}
      */
-    public function register(ServiceContainer $container): void
+    public function register(): void
     {
     }
 
     /**
      * {@inheritDoc}
      */
-    public function boot(ServiceContainer $container): void
+    public function boot(): void
     {
     }
 }

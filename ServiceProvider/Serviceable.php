@@ -14,13 +14,11 @@ declare(strict_types=1);
 
 namespace Qubus\Injector\ServiceProvider;
 
-use Qubus\Injector\ServiceContainer;
-
 interface Serviceable
 {
     /**
      * Register services that need to be loaded during
      * the booting stage.
      */
-    public function register(ServiceContainer $container): void;
+    public function register(): void;
 }
