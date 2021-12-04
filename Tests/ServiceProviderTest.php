@@ -15,7 +15,7 @@ namespace Qubus\Tests\Injector;
 use PHPUnit\Framework\Assert;
 use PHPUnit\Framework\TestCase;
 use Qubus\Injector\Config\Factory;
-use Qubus\Injector\Psr11\Container;
+use Qubus\Injector\Injector;
 use Qubus\Injector\Tests\ServiceProvider\FakeServiceProvider;
 use Qubus\Injector\Tests\ServiceProvider\Person;
 
@@ -23,10 +23,10 @@ class ServiceProviderTest extends TestCase
 {
     public function testFakeServiceProvider()
     {
-        $injector = new Container(Factory::create([]));
+        $injector = new Injector(Factory::create([]));
 
-        $service = new FakeServiceProvider();
-        $service->register($injector);
+        $service = new FakeServiceProvider($injector);
+        $service->register();
 
         $name = new Person('Joseph Smith');
 
