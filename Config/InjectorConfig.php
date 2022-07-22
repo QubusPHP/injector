@@ -180,7 +180,7 @@ class InjectorConfig extends ArrayObject implements Config
     /**
      * {@inheritDoc}
      */
-    public function count()
+    public function count(): int
     {
         return parent::count();
     }
@@ -188,7 +188,7 @@ class InjectorConfig extends ArrayObject implements Config
     /**
      * {@inheritDoc}
      */
-    public function offsetExists($index)
+    public function offsetExists(mixed $index): bool
     {
         return $this->has($index);
     }
@@ -196,7 +196,7 @@ class InjectorConfig extends ArrayObject implements Config
     /**
      * {@inheritDoc}
      */
-    public function offsetGet($index)
+    public function offsetGet(mixed $index): mixed
     {
         return $this->get($index);
     }
@@ -204,7 +204,7 @@ class InjectorConfig extends ArrayObject implements Config
     /**
      * {@inheritDoc}
      */
-    public function offsetSet($index, $newval)
+    public function offsetSet(mixed $index, mixed $newval): void
     {
         $this->add($index, $newval);
     }
@@ -212,7 +212,7 @@ class InjectorConfig extends ArrayObject implements Config
     /**
      * {@inheritDoc}
      */
-    public function offsetUnset($index)
+    public function offsetUnset(mixed $index): void
     {
         $this->remove($index);
     }

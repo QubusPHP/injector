@@ -16,7 +16,7 @@ namespace Qubus\Tests\Injector;
 use PHPUnit\Framework\Assert;
 use PHPUnit\Framework\TestCase;
 use Qubus\Injector\Config\Config;
-use Qubus\Injector\Config\Factory;
+use Qubus\Injector\Config\InjectorFactory;
 use Qubus\Injector\ConfigException;
 use Qubus\Injector\InjectionChain;
 use Qubus\Injector\InjectionException;
@@ -31,7 +31,7 @@ class InjectorTest extends TestCase
 {
     public function testMakeInstancesThroughConfigAlias()
     {
-        $injector = new Injector(Factory::create([
+        $injector = new Injector(InjectorFactory::create([
             Injector::STANDARD_ALIASES => [
                 'bn.foo' => NotSharedClass::class,
             ],
@@ -66,7 +66,7 @@ class InjectorTest extends TestCase
 
     public function testArgumentDefinitionsThroughConfig()
     {
-        $injector = new Injector(Factory::create([
+        $injector = new Injector(InjectorFactory::create([
             Injector::ARGUMENT_DEFINITIONS => [
                 DependencyWithDefinedParam::class => [
                     'foo' => 42,
@@ -80,7 +80,7 @@ class InjectorTest extends TestCase
 
     public function testDelegationsThroughConfig()
     {
-        $injector = new Injector(Factory::create([
+        $injector = new Injector(InjectorFactory::create([
             Injector::DELEGATIONS => [
                 'stdClass' => function () {
                     return new SomeClassName();
@@ -94,7 +94,7 @@ class InjectorTest extends TestCase
 
     public function testPreparationsThroughConfig()
     {
-        $injector = new Injector(Factory::create([
+        $injector = new Injector(InjectorFactory::create([
             Injector::PREPARATIONS => [
                 'stdClass'           => function ($obj, $injector) {
                     $obj->testval = 42;
@@ -113,7 +113,7 @@ class InjectorTest extends TestCase
 
     public function testMakeInstanceInjectsSimpleConcreteDependency()
     {
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         Assert::assertEquals(
             new TestNeedsDep(new TestDependency()),
             $injector->make(TestNeedsDep::class)
@@ -122,7 +122,7 @@ class InjectorTest extends TestCase
 
     public function testMakeInstanceReturnsNewInstanceIfClassHasNoConstructor()
     {
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         Assert::assertEquals(
             new TestNoConstructor(),
             $injector->make(TestNoConstructor::class)
@@ -131,7 +131,7 @@ class InjectorTest extends TestCase
 
     public function testMakeInstanceReturnsAliasInstanceOnNonConcreteTypehint()
     {
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $injector->alias(
             DepInterface::class,
             DepImplementation::class
@@ -151,7 +151,7 @@ class InjectorTest extends TestCase
         $this->expectException(InjectionException::class);
         $this->expectExceptionCode(InjectorException::E_NEEDS_DEFINITION);
 
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $injector->make(DepInterface::class);
     }
 
@@ -164,13 +164,13 @@ class InjectorTest extends TestCase
         $this->expectException(InjectionException::class);
         $this->expectExceptionCode(InjectorException::E_NEEDS_DEFINITION);
 
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $injector->make(RequiresInterface::class);
     }
 
     public function testMakeInstanceBuildsNonConcreteCtorParamWithAlias()
     {
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $injector->alias(
             DepInterface::class,
             DepImplementation::class
@@ -184,7 +184,7 @@ class InjectorTest extends TestCase
 
     public function testMakeInstancePassesNullCtorParameterIfNoTypehintOrDefaultCanBeDetermined()
     {
-        $injector         = new Injector(Factory::create([]));
+        $injector         = new Injector(InjectorFactory::create([]));
         $nullCtorParamObj = $injector->make(ProvTestNoDefinitionNullDefaultClass::class);
         Assert::assertEquals(new ProvTestNoDefinitionNullDefaultClass(), $nullCtorParamObj);
         Assert::assertEquals(null, $nullCtorParamObj->arg);
@@ -192,7 +192,7 @@ class InjectorTest extends TestCase
 
     public function testMakeInstanceReturnsSharedInstanceIfAvailable()
     {
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $injector->define(
             RequiresInterface::class,
             ['dep' => DepImplementation::class]
@@ -214,13 +214,13 @@ class InjectorTest extends TestCase
     {
         $this->expectException(InjectionException::class);
 
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $injector->make('ClassThatDoesntExist');
     }
 
     public function testMakeInstanceUsesCustomDefinitionIfSpecified()
     {
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $injector->define(
             TestNeedsDep::class,
             ['testDep' => TestDependency::class]
@@ -234,7 +234,7 @@ class InjectorTest extends TestCase
 
     public function testMakeInstanceCustomDefinitionOverridesExistingDefinitions()
     {
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $injector->define(
             InjectorTestChildClass::class,
             [
@@ -252,7 +252,7 @@ class InjectorTest extends TestCase
 
     public function testMakeInstanceStoresShareIfMarkedWithNullInstance()
     {
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $injector->share(TestDependency::class);
         $obj = $injector->make(TestDependency::class);
         Assert::assertInstanceOf(TestDependency::class, $obj);
@@ -260,7 +260,7 @@ class InjectorTest extends TestCase
 
     public function testMakeInstanceUsesReflectionForUnknownParamsInMultiBuildWithDeps()
     {
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $obj      = $injector->make(
             TestMultiDepsWithCtor::class,
             ['val1' => TestDependency::class]
@@ -284,7 +284,7 @@ class InjectorTest extends TestCase
         $this->expectException(InjectionException::class);
         $this->expectExceptionCode(InjectorException::E_UNDEFINED_PARAM);
 
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $obj      = $injector->make(InjectorTestCtorParamWithNoTypehintOrDefault::class);
         Assert::assertNull($obj->val);
     }
@@ -298,7 +298,7 @@ class InjectorTest extends TestCase
         $this->expectException(InjectionException::class);
         $this->expectExceptionCode(InjectorException::E_UNDEFINED_PARAM);
 
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $injector->alias(
             TestNoExplicitDefine::class,
             InjectorTestCtorParamWithNoTypehintOrDefault::class
@@ -314,14 +314,14 @@ class InjectorTest extends TestCase
     {
         $this->expectException(InjectionException::class);
 
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $obj      = $injector->make(RequiresInterface::class);
     }
 
     public function testTypelessDefineForDependency()
     {
         $thumbnailSize = 128;
-        $injector      = new Injector(Factory::create([]));
+        $injector      = new Injector(InjectorFactory::create([]));
         $injector->defineParam('thumbnailSize', $thumbnailSize);
         $testClass = $injector->make(RequiresDependencyWithTypelessParameters::class);
         Assert::assertEquals(
@@ -333,7 +333,7 @@ class InjectorTest extends TestCase
 
     public function testTypelessDefineForAliasedDependency()
     {
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $injector->defineParam('val', 42);
 
         $injector->alias(
@@ -349,7 +349,7 @@ class InjectorTest extends TestCase
 
     public function testMakeInstanceInjectsRawParametersDirectly()
     {
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $injector->define(
             InjectorTestRawCtorParams::class,
             [
@@ -375,14 +375,14 @@ class InjectorTest extends TestCase
 
     public function testMakeInstanceHandlesNamespacedClasses()
     {
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $obj      = $injector->make(SomeClassName::class);
         Assert::assertInstanceOf(SomeClassName::class, $obj);
     }
 
     public function testMakeInstanceDelegate()
     {
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
 
         $callable = $this->getMockBuilder('CallableMock')
             ->setMethods(['__invoke'])
@@ -401,7 +401,7 @@ class InjectorTest extends TestCase
 
     public function testMakeInstanceWithStringDelegate()
     {
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $injector->delegate(
             stdClass::class,
             StringStdClassDelegateMock::class
@@ -417,7 +417,7 @@ class InjectorTest extends TestCase
     {
         $this->expectException(ConfigException::class);
 
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $injector->delegate(stdClass::class, StringDelegateWithNoInvokeMethod::class);
     }
 
@@ -428,7 +428,7 @@ class InjectorTest extends TestCase
     {
         $this->expectException(ConfigException::class);
 
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $injector->delegate(
             stdClass::class,
             SomeClassThatDefinitelyDoesNotExistForReal::class
@@ -442,13 +442,13 @@ class InjectorTest extends TestCase
     {
         $this->expectException(InjectionException::class);
 
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $obj      = $injector->make(RequiresInterface::class);
     }
 
     public function testDefineAssignsPassedDefinition()
     {
-        $injector   = new Injector(Factory::create([]));
+        $injector   = new Injector(InjectorFactory::create([]));
         $definition = ['dep' => DepImplementation::class];
         $injector->define(
             RequiresInterface::class,
@@ -462,7 +462,7 @@ class InjectorTest extends TestCase
 
     public function testShareStoresSharedInstanceAndReturnsCurrentInstance()
     {
-        $injector        = new Injector(Factory::create([]));
+        $injector        = new Injector(InjectorFactory::create([]));
         $testShare       = new stdClass();
         $testShare->test = 42;
 
@@ -476,7 +476,7 @@ class InjectorTest extends TestCase
 
     public function testShareMarksClassSharedOnNullObjectParameter()
     {
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         Assert::assertInstanceOf(
             Injector::class,
             $injector->share('SomeClass')
@@ -485,7 +485,7 @@ class InjectorTest extends TestCase
 
     public function testAliasAssignsValueAndReturnsCurrentInstance()
     {
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         Assert::assertInstanceOf(
             Injector::class,
             $injector->alias(
@@ -512,13 +512,13 @@ class InjectorTest extends TestCase
     {
         $this->expectException(ConfigException::class);
 
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $injector->delegate(TestDependency::class, $badDelegate);
     }
 
     public function testDelegateInstantiatesCallableClassString()
     {
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $injector->delegate(
             MadeByDelegate::class,
             CallableDelegateClassTest::class
@@ -531,7 +531,7 @@ class InjectorTest extends TestCase
 
     public function testDelegateInstantiatesCallableClassArray()
     {
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $injector->delegate(
             MadeByDelegate::class,
             [
@@ -549,7 +549,7 @@ class InjectorTest extends TestCase
     {
         $this->expectException(ConfigException::class);
 
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         try {
             $injector->delegate(DelegatableInterface::class, 'FunctionWhichDoesNotExist');
             $this->fail("Delegation was supposed to fail.");
@@ -566,7 +566,7 @@ class InjectorTest extends TestCase
     {
         $this->expectException(ConfigException::class);
 
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         try {
             $injector->delegate(
                 DelegatableInterface::class,
@@ -585,7 +585,7 @@ class InjectorTest extends TestCase
      */
     public function testProvisionedInvokables($toInvoke, $definition, $expectedResult)
     {
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         Assert::assertEquals($expectedResult, $injector->execute($toInvoke, $definition));
     }
 
@@ -765,14 +765,14 @@ class InjectorTest extends TestCase
 
     public function testStaticStringInvokableWithArgument()
     {
-        $injector  = new Injector(Factory::create([]));
+        $injector  = new Injector(InjectorFactory::create([]));
         $invokable = $injector->buildExecutable('Qubus\Tests\Injector\ClassWithStaticMethodThatTakesArg::doSomething');
         Assert::assertEquals(42, $invokable(41));
     }
 
     public function testInterfaceFactoryDelegation()
     {
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $injector->delegate(
             DelegatableInterface::class,
             ImplementsInterfaceFactory::class
@@ -789,13 +789,13 @@ class InjectorTest extends TestCase
     {
         $this->expectException(InjectionException::class);
 
-        $injector  = new Injector(Factory::create([]));
+        $injector  = new Injector(InjectorFactory::create([]));
         $testClass = $injector->make(TestMissingDependency::class);
     }
 
     public function testAliasingConcreteClasses()
     {
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $injector->alias(ConcreteClass1::class, ConcreteClass2::class);
         $obj = $injector->make(ConcreteClass1::class);
         Assert::assertInstanceOf(ConcreteClass2::class, $obj);
@@ -803,7 +803,7 @@ class InjectorTest extends TestCase
 
     public function testSharedByAliasedInterfaceName()
     {
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $injector->alias(
             SharedAliasedInterface::class,
             SharedClass::class
@@ -816,7 +816,7 @@ class InjectorTest extends TestCase
 
     public function testNotSharedByAliasedInterfaceName()
     {
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $injector->alias(
             SharedAliasedInterface::class,
             SharedClass::class
@@ -834,7 +834,7 @@ class InjectorTest extends TestCase
 
     public function testSharedByAliasedInterfaceNameReversedOrder()
     {
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $injector->share(SharedAliasedInterface::class);
         $injector->alias(
             SharedAliasedInterface::class,
@@ -847,7 +847,7 @@ class InjectorTest extends TestCase
 
     public function testSharedByAliasedInterfaceNameWithParameter()
     {
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $injector->alias(
             SharedAliasedInterface::class,
             SharedClass::class
@@ -860,7 +860,7 @@ class InjectorTest extends TestCase
 
     public function testSharedByAliasedInstance()
     {
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $injector->alias(
             SharedAliasedInterface::class,
             SharedClass::class
@@ -873,7 +873,7 @@ class InjectorTest extends TestCase
 
     public function testMultipleShareCallsDontOverrideTheOriginalSharedInstance()
     {
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $injector->share(stdClass::class);
         $stdClass1 = $injector->make(stdClass::class);
         $injector->share(stdClass::class);
@@ -883,7 +883,7 @@ class InjectorTest extends TestCase
 
     public function testDependencyWhereSharedWithProtectedConstructor()
     {
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
 
         $inner = TestDependencyWithProtectedConstructor::create();
         $injector->share($inner);
@@ -895,7 +895,7 @@ class InjectorTest extends TestCase
 
     public function testDependencyWhereShared()
     {
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $injector->share(ClassInnerB::class);
         $innerDep = $injector->make(ClassInnerB::class);
         $inner    = $injector->make(ClassInnerA::class);
@@ -906,7 +906,7 @@ class InjectorTest extends TestCase
 
     public function testBugWithReflectionPoolIncorrectlyReturningBadInfo()
     {
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $obj      = $injector->make(ClassOuter::class);
         Assert::assertInstanceOf(ClassOuter::class, $obj);
         Assert::assertInstanceOf(ClassInnerA::class, $obj->dep);
@@ -935,13 +935,13 @@ class InjectorTest extends TestCase
         $this->expectException(InjectionException::class);
         $this->expectExceptionCode(InjectorException::E_CYCLIC_DEPENDENCY);
 
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $injector->make($class);
     }
 
     public function testNonConcreteDependencyWithDefault()
     {
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $class    = $injector->make(NonConcreteDependencyWithDefaultValue::class);
         Assert::assertInstanceOf(NonConcreteDependencyWithDefaultValue::class, $class);
         Assert::assertNull($class->interface);
@@ -949,7 +949,7 @@ class InjectorTest extends TestCase
 
     public function testNonConcreteDependencyWithDefaultValueThroughAlias()
     {
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $injector->alias(
             DelegatableInterface::class,
             ImplementsInterface::class
@@ -961,7 +961,7 @@ class InjectorTest extends TestCase
 
     public function testNonConcreteDependencyWithDefaultValueThroughDelegation()
     {
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $injector->delegate(
             DelegatableInterface::class,
             ImplementsInterfaceFactory::class
@@ -973,7 +973,7 @@ class InjectorTest extends TestCase
 
     public function testDependencyWithDefaultValueThroughShare()
     {
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         //Instance is not shared, null default is used for dependency
         $instance = $injector->make(ConcreteDependencyWithDefaultValue::class);
         Assert::assertNull($instance->dependency);
@@ -994,7 +994,7 @@ class InjectorTest extends TestCase
         $this->expectException(ConfigException::class);
         $this->expectExceptionCode(InjectorException::E_ALIASED_CANNOT_SHARE);
 
-        $injector  = new Injector(Factory::create([]));
+        $injector  = new Injector(InjectorFactory::create([]));
         $testClass = new stdClass();
         $injector->alias(stdClass::class, SomeOtherClass::class);
         $injector->share($testClass);
@@ -1002,7 +1002,7 @@ class InjectorTest extends TestCase
 
     public function testShareAfterAliasAliasedClassAllowed()
     {
-        $injector  = new Injector(Factory::create([]));
+        $injector  = new Injector(InjectorFactory::create([]));
         $testClass = new DepImplementation();
         $injector->alias(DepInterface::class, DepImplementation::class);
         $injector->share($testClass);
@@ -1012,7 +1012,7 @@ class InjectorTest extends TestCase
 
     public function testAliasAfterShareByStringAllowed()
     {
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $injector->share(DepInterface::class);
         $injector->alias(DepInterface::class, DepImplementation::class);
         $obj  = $injector->make(DepInterface::class);
@@ -1023,7 +1023,7 @@ class InjectorTest extends TestCase
 
     public function testAliasAfterShareBySharingAliasAllowed()
     {
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $injector->share(DepImplementation::class);
         $injector->alias(DepInterface::class, DepImplementation::class);
         $obj  = $injector->make(DepInterface::class);
@@ -1041,7 +1041,7 @@ class InjectorTest extends TestCase
         $this->expectException(ConfigException::class);
         $this->expectExceptionCode(InjectorException::E_SHARED_CANNOT_ALIAS);
 
-        $injector  = new Injector(Factory::create([]));
+        $injector  = new Injector(InjectorFactory::create([]));
         $testClass = new stdClass();
         $injector->share($testClass);
         $injector->alias('stdClass', SomeOtherClass::class);
@@ -1056,7 +1056,7 @@ class InjectorTest extends TestCase
         $this->expectException(InjectionException::class);
         $this->expectExceptionCode(InjectorException::E_NON_PUBLIC_CONSTRUCTOR);
 
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $injector->make(HasNonPublicConstructor::class);
     }
 
@@ -1069,13 +1069,13 @@ class InjectorTest extends TestCase
         $this->expectException(InjectionException::class);
         $this->expectExceptionCode(InjectorException::E_NON_PUBLIC_CONSTRUCTOR);
 
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $injector->make(HasNonPublicConstructorWithArgs::class);
     }
 
     public function testMakeExecutableFailsOnNonExistentFunction()
     {
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $this->expectException(
             InjectionException::class,
             'nonExistentFunction',
@@ -1086,7 +1086,7 @@ class InjectorTest extends TestCase
 
     public function testMakeExecutableFailsOnNonExistentInstanceMethod()
     {
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $object   = new stdClass();
         $this->expectException(
             InjectionException::class,
@@ -1098,7 +1098,7 @@ class InjectorTest extends TestCase
 
     public function testMakeExecutableFailsOnNonExistentStaticMethod()
     {
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $this->expectException(
             InjectionException::class,
             "stdClass::nonExistentMethod",
@@ -1116,7 +1116,7 @@ class InjectorTest extends TestCase
         $this->expectException(InjectionException::class);
         $this->expectExceptionCode(InjectorException::E_INVOKABLE);
 
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $object   = new stdClass();
         $injector->buildExecutable($object);
     }
@@ -1130,14 +1130,14 @@ class InjectorTest extends TestCase
         $this->expectException(ConfigException::class);
         $this->expectExceptionCode(InjectorException::E_NON_EMPTY_STRING_ALIAS);
 
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $injector->share(DepInterface::class);
         $injector->alias(DepInterface::class, '');
     }
 
     public function testShareNewAlias()
     {
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $injector->share(DepImplementation::class);
         $injector->alias(DepInterface::class, DepImplementation::class);
         Assert::assertTrue(true);
@@ -1145,7 +1145,7 @@ class InjectorTest extends TestCase
 
     public function testDefineWithBackslashAndMakeWithoutBackslash()
     {
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $injector->define(SimpleNoTypehintClass::class, [':arg' => 'tested']);
         $testClass = $injector->make(SimpleNoTypehintClass::class);
         Assert::assertEquals('tested', $testClass->testParam);
@@ -1153,7 +1153,7 @@ class InjectorTest extends TestCase
 
     public function testShareWithBackslashAndMakeWithoutBackslash()
     {
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $injector->share(stdClass::class);
         $classA         = $injector->make(stdClass::class);
         $classA->tested = false;
@@ -1165,7 +1165,7 @@ class InjectorTest extends TestCase
 
     public function testInstanceMutate()
     {
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $injector->prepare(stdClass::class, function ($obj, $injector) {
             $obj->testval = 42;
         });
@@ -1176,7 +1176,7 @@ class InjectorTest extends TestCase
 
     public function testInterfaceMutate()
     {
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $injector->prepare(
             SomeInterface::class,
             function ($obj, $injector) {
@@ -1200,14 +1200,14 @@ class InjectorTest extends TestCase
         $this->expectException(InjectionException::class);
         $this->expectExceptionCode(InjectorException::E_UNDEFINED_PARAM);
 
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $injector->share(DependencyWithDefinedParam::class);
         $injector->make(RequiresDependencyWithDefinedParam::class, [':foo' => 5]);
     }
 
     public function testDelegationFunction()
     {
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $injector->delegate(
             TestDelegationSimple::class,
             'Qubus\Tests\Injector\createTestDelegationSimple'
@@ -1219,7 +1219,7 @@ class InjectorTest extends TestCase
 
     public function testDelegationDependency()
     {
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $injector->delegate(
             TestDelegationDependency::class,
             createTestDelegationDependency::class
@@ -1231,7 +1231,7 @@ class InjectorTest extends TestCase
 
     public function testExecutableAliasing()
     {
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $injector->alias(
             BaseExecutableClass::class,
             ExtendsExecutableClass::class
@@ -1245,7 +1245,7 @@ class InjectorTest extends TestCase
 
     public function testExecutableAliasingStatic()
     {
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $injector->alias(
             BaseExecutableClass::class,
             ExtendsExecutableClass::class
@@ -1266,7 +1266,7 @@ class InjectorTest extends TestCase
     public function testDelegateClosure()
     {
         $delegateClosure = \Qubus\Tests\Injector\getDelegateClosureInGlobalScope();
-        $injector        = new Injector(Factory::create([]));
+        $injector        = new Injector(InjectorFactory::create([]));
         $injector->delegate(DelegateClosureInGlobalScope::class, $delegateClosure);
         $obj = $injector->make(DelegateClosureInGlobalScope::class);
         Assert::assertInstanceOf(DelegateClosureInGlobalScope::class, $obj);
@@ -1274,7 +1274,7 @@ class InjectorTest extends TestCase
 
     public function testCloningWithServiceLocator()
     {
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $injector->share($injector);
         $instance    = $injector->make(CloneTest::class);
         $newInjector = $instance->injector;
@@ -1285,7 +1285,7 @@ class InjectorTest extends TestCase
 
     public function testAbstractExecute()
     {
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
 
         $fn = fn () => new ConcreteExecuteTest();
 
@@ -1309,14 +1309,14 @@ class InjectorTest extends TestCase
         $delegate = function () {
             return null;
         };
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $injector->delegate(SomeClassName::class, $delegate);
         $injector->make(SomeClassName::class);
     }
 
     public function testPrepareCallableReplacesObjectWithReturnValueOfSameInterfaceType()
     {
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $expected = new SomeImplementation(); // <-- implements SomeInterface
         $injector->prepare(
             SomeInterface::class,
@@ -1330,7 +1330,7 @@ class InjectorTest extends TestCase
 
     public function testPrepareCallableReplacesObjectWithReturnValueOfSameClassType()
     {
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $expected = new SomeImplementation(); // <-- implements SomeInterface
         $injector->prepare(
             SomeImplementation::class,
@@ -1344,7 +1344,7 @@ class InjectorTest extends TestCase
 
     public function testChildWithoutConstructorWorks()
     {
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         try {
             $injector->define(ParentWithConstructor::class, [':foo' => 'parent']);
             $injector->define(ChildWithoutConstructor::class, [':foo' => 'child']);
@@ -1372,7 +1372,7 @@ class InjectorTest extends TestCase
         $this->expectException(InjectionException::class);
         $this->expectExceptionCode(InjectorException::E_UNDEFINED_PARAM);
 
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $injector->define(ParentWithConstructor::class, [':foo' => 'parent']);
         $injector->make(ChildWithoutConstructor::class);
     }
@@ -1395,7 +1395,7 @@ class InjectorTest extends TestCase
             return new InjectionChainValue('unknown value');
         };
 
-        $injector = new Injector(Factory::create([]));
+        $injector = new Injector(InjectorFactory::create([]));
         $injector->share($injector);
         $injector->delegate(InjectionChainValue::class, $fn);
         $injector->delegate(InjectionChain::class, [$injector, 'getInjectionChain']);

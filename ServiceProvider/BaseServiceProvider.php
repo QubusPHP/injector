@@ -21,7 +21,7 @@ abstract class BaseServiceProvider implements Serviceable, Bootable
     public function __construct(protected ServiceContainer $container)
     {
     }
-    
+
     /**
      * {@inheritDoc}
      */

@@ -15,7 +15,7 @@ declare(strict_types=1);
 
 namespace Qubus\Injector\Config;
 
-class Factory
+class InjectorFactory
 {
     public static function create(array $config = [], array $default = []): Config
     {
