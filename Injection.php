@@ -18,18 +18,12 @@ namespace Qubus\Injector;
 class Injection
 {
     /**
-     * Alias that should be instantiated.
-     */
-    private string $alias;
-
-    /**
      * Instantiate an Injection object.
      *
      * @param string $alias Alias that should be instantiated.
      */
-    public function __construct(string $alias)
+    public function __construct(protected string $alias)
     {
-        $this->alias = $alias;
     }
 
     /**

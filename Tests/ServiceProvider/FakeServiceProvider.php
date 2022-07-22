@@ -14,7 +14,6 @@ declare(strict_types=1);
 
 namespace Qubus\Injector\Tests\ServiceProvider;
 
-use Qubus\Injector\ServiceContainer;
 use Qubus\Injector\ServiceProvider\BaseServiceProvider;
 
 class FakeServiceProvider extends BaseServiceProvider
