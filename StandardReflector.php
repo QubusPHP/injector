@@ -66,7 +66,7 @@ class StandardReflector implements Reflector
         if (PHP_VERSION_ID >= 80000) {
             $reflectionClass = $param->getType() ? (string) $param->getType() : null;
         } else {
-            $reflectionClass = $param->getClass();
+            $reflectionClass = $param->getType();
             if ($reflectionClass) {
                 $reflectionClass = $reflectionClass->getName();
             }
