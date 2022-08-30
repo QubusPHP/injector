@@ -14,11 +14,11 @@ declare(strict_types=1);
 
 namespace Qubus\Injector\ServiceProvider;
 
-use Psr\Container\ContainerInterface;
+use Qubus\Injector\ServiceContainer;
 
 abstract class BaseServiceProvider implements Serviceable, Bootable
 {
-    public function __construct(protected ContainerInterface $container)
+    public function __construct(protected ServiceContainer $container)
     {
     }
 

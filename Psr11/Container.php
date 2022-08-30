@@ -19,18 +19,20 @@ use Psr\Container\ContainerInterface;
 use Qubus\Exception\Exception;
 use Qubus\Exception\Http\Client\NotFoundException;
 use Qubus\Injector\Injector;
+use Qubus\Injector\ServiceContainer;
 use ReflectionClass;
 
 use function array_filter;
 use function class_exists;
 use function sprintf;
 
-class Container extends Injector implements ContainerInterface
+class Container extends Injector implements ContainerInterface, ServiceContainer
 {
     protected array $has = [];
 
     /**
      * {@inheritDoc}
+     * @throws NotFoundException
      */
     public function get(string $id)
     {
