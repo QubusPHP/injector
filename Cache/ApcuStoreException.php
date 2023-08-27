@@ -11,10 +11,10 @@
 
 declare(strict_types=1);
 
-namespace Qubus\Injector;
+namespace Qubus\Injector\Cache;
 
-use RuntimeException;
+use Qubus\Exception\Exception;
 
-class InvalidMappingsException extends RuntimeException implements InjectorException
+class ApcuStoreException extends Exception
 {
 }
