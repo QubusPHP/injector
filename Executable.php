@@ -4,11 +4,9 @@
  * Qubus\Injector
  *
  * @link       https://github.com/QubusPHP/injector
- * @copyright  2020 Joshua Parker <josh@joshuaparker.blog>
+ * @copyright  2020 Joshua Parker <joshua@joshuaparker.dev>
  * @copyright  2013-2014 Daniel Lowrey, Levi Morrison, Dan Ackroyd
  * @license    https://opensource.org/licenses/mit-license.php MIT License
- *
- * @since      1.0.0
  */
 
 declare(strict_types=1);
@@ -37,6 +35,9 @@ class Executable
 
     private bool $isInstanceMethod;
 
+    /**
+     * @throws TypeException
+     */
     public function __construct(ReflectionFunctionAbstract $reflFunc, ?object $invocationObject = null)
     {
         if ($reflFunc instanceof ReflectionMethod) {
@@ -48,7 +49,10 @@ class Executable
         }
     }
 
-    private function setMethodCallable(ReflectionMethod $reflection, ?object $invocationObject)
+    /**
+     * @throws TypeException
+     */
+    private function setMethodCallable(ReflectionMethod $reflection, ?object $invocationObject): void
     {
         if (is_object($invocationObject)) {
             $this->callableReflection = $reflection;
@@ -99,9 +103,6 @@ class Executable
         return $this->callableReflection;
     }
 
-    /**
-     * @return ReflectionFunctionAbstract
-     */
     public function getInvocationObject()
     {
         return $this->invocationObject;

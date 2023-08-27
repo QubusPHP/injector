@@ -4,11 +4,9 @@
  * Qubus\Injector
  *
  * @link       https://github.com/QubusPHP/injector
- * @copyright  2020 Joshua Parker <josh@joshuaparker.blog>
+ * @copyright  2020 Joshua Parker <joshua@joshuaparker.dev>
  * @copyright  2013-2014 Daniel Lowrey, Levi Morrison, Dan Ackroyd
  * @license    https://opensource.org/licenses/mit-license.php MIT License
- *
- * @since      1.0.0
  */
 
 declare(strict_types=1);
@@ -55,9 +53,6 @@ class InjectorConfig extends ArrayObject implements Config
         parent::__construct($this->storage, ArrayObject::ARRAY_AS_PROPS);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public function all(): array
     {
         return $this->getArrayCopy();
@@ -74,7 +69,7 @@ class InjectorConfig extends ArrayObject implements Config
             return $default;
         }
 
-        // The class::temp variable is always setted by the class::has() method
+        // The class::temp variable is always set by the class::has() method
         return $this->temp;
     }
 
@@ -88,9 +83,6 @@ class InjectorConfig extends ArrayObject implements Config
         return isset($this->temp);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public function add($key, $value): InjectorConfig
     {
         $this->storage[ $key ] = $value;
@@ -98,9 +90,6 @@ class InjectorConfig extends ArrayObject implements Config
         return $this;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public function remove(...$withKeys): InjectorConfig
     {
         foreach ($withKeys as $keys) {
@@ -113,9 +102,6 @@ class InjectorConfig extends ArrayObject implements Config
         return $this;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public function merge(...$arrayToMerge): InjectorConfig
     {
         foreach ($arrayToMerge as $key => $arr) {
@@ -132,17 +118,11 @@ class InjectorConfig extends ArrayObject implements Config
         return $this;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public function toArray(): array
     {
         return iterator_to_array($this);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public function toJson(): string
     {
         return strval(json_encode($this->toArray()));
@@ -156,10 +136,11 @@ class InjectorConfig extends ArrayObject implements Config
 
     /**
      * @param array $array
+     * @param string|int $key
      * @param mixed $default
      * @return mixed
      */
-    private static function search(array $array, string|int $key, $default = null)
+    private static function search(array $array, string|int $key, $default = null): mixed
     {
         if (is_int($key) || strripos($key, self::$delimiter) === false) {
             return array_key_exists($key, $array) ? $array[ $key ] : $default;

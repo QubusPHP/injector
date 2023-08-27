@@ -4,11 +4,9 @@
  * Qubus\Injector
  *
  * @link       https://github.com/QubusPHP/injector
- * @copyright  2020 Joshua Parker <josh@joshuaparker.blog>
+ * @copyright  2020 Joshua Parker <joshua@joshuaparker.dev>
  * @copyright  2013-2014 Daniel Lowrey, Levi Morrison, Dan Ackroyd
  * @license    https://opensource.org/licenses/mit-license.php MIT License
- *
- * @since      1.0.0
  */
 
 declare(strict_types=1);
@@ -18,6 +16,7 @@ namespace Qubus\Injector;
 use Closure;
 use ProxyManager\Factory\LazyLoadingValueHolderFactory;
 use ProxyManager\Proxy\LazyLoadingInterface;
+use Qubus\Exception\Data\TypeException;
 use Qubus\Exception\Exception;
 use Qubus\Injector\Cache\CachingReflector;
 use Qubus\Injector\Config\Config;
@@ -114,7 +113,6 @@ class Injector implements ServiceContainer
      *
      * @param Config         $config Configuration array passed to the Injector.
      * @param Reflector|null $reflector Optional. Reflector class to use for traversal. Falls back to CachingReflector.
-     * @throws FailedToProcessConfigException If the config file could not be processed.
      * @throws InvalidMappingsException       If the definitions could not be registered.
      */
     public function __construct(Config $config, ?Reflector $reflector = null)
@@ -222,7 +220,7 @@ class Injector implements ServiceContainer
      * @param string $alias         The alias for which to define the argument.
      * @throws InvalidMappingsException If a required config key could not be found.
      */
-    protected function defineArguments(array $argumentSetup, string $alias)
+    protected function defineArguments(array $argumentSetup, string $alias): void
     {
         foreach ($argumentSetup as $key => $value) {
             $this->addArgumentDefinition($value, $alias, [$key, null]);
@@ -236,7 +234,7 @@ class Injector implements ServiceContainer
      * @param string   $alias   The alias for which to define the delegation.
      * @throws ConfigException If the delegation could not be configured.
      */
-    protected function defineDelegations(callable $factory, string $alias)
+    protected function defineDelegations(callable $factory, string $alias): void
     {
         $this->delegate($alias, $factory);
     }
@@ -249,7 +247,7 @@ class Injector implements ServiceContainer
      * @throws InvalidMappingsException If a required config key could not be found.
      * @throws InjectionException If the prepare statement was not valid.
      */
-    protected function definePreparations(callable $preparation, string $alias)
+    protected function definePreparations(callable $preparation, string $alias): void
     {
         $this->prepare($alias, $preparation);
     }
@@ -261,7 +259,7 @@ class Injector implements ServiceContainer
      * @param string $argument     The argument to provide.
      * @throws InvalidMappingsException If a required config key could not be found.
      */
-    protected function defineArgumentProviders(array $argumentSetup, string $argument)
+    protected function defineArgumentProviders(array $argumentSetup, string $argument): void
     {
         if (! array_key_exists('mappings', $argumentSetup)) {
             throw new InvalidMappingsException(
@@ -288,7 +286,7 @@ class Injector implements ServiceContainer
      * @param array  $args     Additional arguments used for definition. Array containing $argument & $interface.
      * @throws InvalidMappingsException If $callable is not a callable.
      */
-    protected function addArgumentDefinition($callable, string $alias, array $args)
+    protected function addArgumentDefinition($callable, string $alias, array $args): void
     {
         [$argument, $interface] = $args;
 
@@ -409,7 +407,7 @@ class Injector implements ServiceContainer
         return $this;
     }
 
-    private function normalizeName(string $className)
+    private function normalizeName(string $className): string
     {
         return ltrim(strtolower($className), '\\');
     }
@@ -437,13 +435,13 @@ class Injector implements ServiceContainer
         return $this;
     }
 
-    private function shareClass(string|object $nameOrInstance)
+    private function shareClass(string|object $nameOrInstance): void
     {
         [, $normalizedName] = $this->resolveAlias($nameOrInstance);
         $this->shares[$normalizedName] = $this->shares[$normalizedName] ?? null;
     }
 
-    private function resolveAlias(string $name)
+    private function resolveAlias(string $name): array
     {
         $normalizedName = $this->normalizeName($name);
         if (isset($this->aliases[$normalizedName])) {
@@ -454,7 +452,7 @@ class Injector implements ServiceContainer
         return [$name, $normalizedName];
     }
 
-    private function shareInstance(object $obj)
+    private function shareInstance(object $obj): void
     {
         $normalizedName = $this->normalizeName($obj::class);
         if (isset($this->aliases[$normalizedName])) {
@@ -490,7 +488,7 @@ class Injector implements ServiceContainer
         return $this;
     }
 
-    private function isExecutable($exe)
+    private function isExecutable($exe): bool
     {
         if (is_callable($exe)) {
             return true;
@@ -524,8 +522,8 @@ class Injector implements ServiceContainer
      *
      * Exposes introspection of existing binds/delegates/shares/etc for decoration and composition.
      *
-     * @param string $nameFilter An optional class name filter
-     * @param int    $typeFilter A bitmask of Injector::* type constant flags.
+     * @param string|null $nameFilter An optional class name filter
+     * @param int|null $typeFilter A bitmask of Injector::* type constant flags.
      * @return array
      */
     public function inspect(?string $nameFilter = null, ?int $typeFilter = null)
@@ -647,11 +645,12 @@ class Injector implements ServiceContainer
     }
 
     /**
+     * @param string $className
+     * @param string $normalizedClass
      * @param array $args
      * @return mixed|object
-     * @throws InjectionException
      */
-    private function buildWrappedObject(string $className, string $normalizedClass, array $args)
+    private function buildWrappedObject(string $className, string $normalizedClass, array $args): mixed
     {
         $wrappedObject = $this->provisionInstance($className, $normalizedClass, $args);
 
@@ -717,7 +716,7 @@ class Injector implements ServiceContainer
         ReflectionFunctionAbstract $reflFunc,
         array $definition,
         ?array $reflParams = null
-    ) {
+    ): array {
         $args = [];
 
         // @TODO store this in ReflectionStorage
@@ -894,6 +893,7 @@ class Injector implements ServiceContainer
 
     /**
      * {@inheritDoc}
+     * @throws TypeException
      */
     public function execute(callable|string|array|object $callableOrMethodStr, array $args = [])
     {
@@ -909,7 +909,7 @@ class Injector implements ServiceContainer
      *
      * @param callable|string|array|object $callableOrMethodStr A valid PHP callable
      *                                                          or a provisionable ClassName::methodName string.
-     * @throws InjectionException If the Executable structure could not be built.
+     * @throws InjectionException|TypeException If the Executable structure could not be built.
      */
     public function buildExecutable(callable|string|array|object $callableOrMethodStr): Executable
     {
@@ -926,7 +926,7 @@ class Injector implements ServiceContainer
         return new Executable($reflFunc, $invocationObj);
     }
 
-    private function buildExecutableStruct(callable|string|array|object $callableOrMethodStr)
+    private function buildExecutableStruct(callable|string|array|object $callableOrMethodStr): array
     {
         if (is_string($callableOrMethodStr)) {
             $executableStruct = $this->buildExecutableStructFromString($callableOrMethodStr);
@@ -953,7 +953,7 @@ class Injector implements ServiceContainer
         return $executableStruct;
     }
 
-    private function buildExecutableStructFromString(object|string $stringExecutable)
+    private function buildExecutableStructFromString(object|string $stringExecutable): array
     {
         if (function_exists($stringExecutable)) {
             $callableRefl = $this->reflector->getFunction($stringExecutable);
@@ -975,7 +975,7 @@ class Injector implements ServiceContainer
         return $executableStruct;
     }
 
-    private function buildStringClassMethodCallable(object|string $class, string $method)
+    private function buildStringClassMethodCallable(object|string $class, string $method): array
     {
         $relativeStaticMethodStartPos = strpos($method, 'parent::');
 
@@ -1001,7 +1001,7 @@ class Injector implements ServiceContainer
         return [$reflectionMethod, $instance];
     }
 
-    private function buildExecutableStructFromArray(array $arrayExecutable)
+    private function buildExecutableStructFromArray(array $arrayExecutable): array
     {
         [$classOrObj, $method] = $arrayExecutable;
 
@@ -1025,7 +1025,7 @@ class Injector implements ServiceContainer
      *
      * @return InjectionChain Chain of instantiations.
      */
-    public function getInjectionChain()
+    public function getInjectionChain(): InjectionChain
     {
         return new InjectionChain($this->inProgressMakes);
     }
