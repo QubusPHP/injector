@@ -63,14 +63,15 @@ class ApcReflectionCache implements ReflectionCache
     /**
      * Store the value for a specified key in the cache.
      *
-     * @param string $key  The key for which to store the value.
-     * @param mixed  $data The value to store under the specified key.
+     * @param string $key The key for which to store the value.
+     * @param mixed $data The value to store under the specified key.
+     * @throws ApcStoreException
      */
     public function store(string $key, $data): void
     {
         $ret = apc_store($key, $data, $this->timeToLive);
         if ($ret === false) {
-            throw new Exception();
+            throw new ApcStoreException('apc_store failed to cache a variable in the data store.');
         }
 
         $this->cache->store($key, $data);
