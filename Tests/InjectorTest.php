@@ -4,6 +4,8 @@ namespace Qubus\Tests\Injector;
 
 use PHPUnit\Framework\Assert;
 use PHPUnit\Framework\TestCase;
+use ProxyManager\Factory\LazyLoadingValueHolderFactory;
+use ProxyManager\Proxy\LazyLoadingInterface;
 use Qubus\Injector\Config\Config;
 use Qubus\Injector\Config\InjectorFactory;
 use Qubus\Injector\ConfigException;
@@ -18,6 +20,28 @@ use const PHP_VERSION_ID;
 
 class InjectorTest extends TestCase
 {
+    public function testInstanceProxy()
+    {
+        $injector = new Injector(InjectorFactory::create([]));
+        $injector->proxy(
+            TestDependency::class,
+            static function (string $className, callable $callback) {
+                return (new LazyLoadingValueHolderFactory())->createProxy(
+                    $className,
+                    static function (&$object, $proxy, $method, $parameters, &$initializer) use ($callback) {
+                        $object = $callback();
+                        $initializer = null;
+                    }
+                );
+            }
+        );
+
+        $class = $injector->make(TestDependency::class);
+
+        Assert::assertInstanceOf(TestDependency::class, $class);
+        Assert::assertInstanceOf(LazyLoadingInterface::class, $class);
+        Assert::assertEquals('testVal', $class->testProp);
+    }
     public function testMakeInstancesThroughConfigAlias()
     {
         $injector = new Injector(InjectorFactory::create([
