@@ -613,6 +613,12 @@ class Injector implements ServiceContainer
                 $reflectionFunction = $executable->getCallableReflection();
                 $args               = $this->provisionFuncArgs($reflectionFunction, $args);
                 $obj                = call_user_func_array([$executable, '__invoke'], $args);
+            } elseif (isset($this->proxies[$normalizedClass])) {
+                if (isset($this->prepares[$normalizedClass])) {
+                    $this->preparesProxy[$normalizedClass] = $this->prepares[$normalizedClass];
+                }
+                $obj = $this->resolveProxy($className, $normalizedClass, $args);
+                unset($this->prepares[$normalizedClass]);
             } else {
                 $obj = $this->provisionInstance($className, $normalizedClass, $args);
             }
