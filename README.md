@@ -4,7 +4,7 @@ Qubus Injector is a recursive dependency injector. Use Qubus Injector to bootstr
 [S.O.L.I.D.](https://en.wikipedia.org/wiki/SOLID), object-oriented PHP applications.
 
 ## Requirements
-* PHP 8.2+
+* PHP 8.4+
 
 ## Installation
 ```bash
