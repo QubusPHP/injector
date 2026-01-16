@@ -32,7 +32,7 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Qubus\\Tests\\Injector\\": "Tests/"
+            "Qubus\\Injector\\Test\\": "tests/"
         }
     },
     "scripts": {
