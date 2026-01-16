@@ -20,4 +20,18 @@ interface Bootable
      * to be loaded after the called provider is booted.
      */
     public function boot(): void;
+
+    /**
+     * Call the registered booting callbacks.
+     *
+     * @return void
+     */
+    public function callBootingCallbacks(): void;
+
+    /**
+     * Call the registered booted callbacks.
+     *
+     * @return void
+     */
+    public function callBootedCallbacks(): void;
 }
