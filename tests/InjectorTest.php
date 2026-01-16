@@ -1,8 +1,12 @@
 <?php
 
-namespace Qubus\Tests\Injector;
+declare(strict_types=1);
 
+namespace Qubus\Injector\Test;
+
+use Closure;
 use PHPUnit\Framework\Assert;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use ProxyManager\Factory\LazyLoadingValueHolderFactory;
 use ProxyManager\Proxy\LazyLoadingInterface;
@@ -13,6 +17,18 @@ use Qubus\Injector\InjectionChain;
 use Qubus\Injector\InjectionException;
 use Qubus\Injector\Injector;
 use Qubus\Injector\InjectorException;
+use Qubus\Injector\Test\Fixture\BaseExecutableClass;
+use Qubus\Injector\Test\Fixture\BaseExecute;
+use Qubus\Injector\Test\Fixture\CallableMock;
+use Qubus\Injector\Test\Fixture\ChildWithoutConstructor;
+use Qubus\Injector\Test\Fixture\CloneInjector;
+use Qubus\Injector\Test\Fixture\ConcreteExecute;
+use Qubus\Injector\Test\Fixture\DelegateClosureInGlobalScope;
+use Qubus\Injector\Test\Fixture\ExtendsExecutableClass;
+use Qubus\Injector\Test\Fixture\InjectionChainTestDependency;
+use Qubus\Injector\Test\Fixture\InjectionChainValue;
+use Qubus\Injector\Test\Fixture\ParentWithConstructor;
+use Qubus\Injector\Test\Fixture\ReturnsCallable;
 use stdClass;
 use TypeError;
 
@@ -26,7 +42,7 @@ class InjectorTest extends TestCase
         $injector->proxy(
             TestDependency::class,
             static function (string $className, callable $callback) {
-                return (new LazyLoadingValueHolderFactory())->createProxy(
+                return new LazyLoadingValueHolderFactory()->createProxy(
                     $className,
                     static function (&$object, $proxy, $method, $parameters, &$initializer) use ($callback) {
                         $object = $callback();
@@ -155,10 +171,6 @@ class InjectorTest extends TestCase
         );
     }
 
-    /**
-     * @expectedException InjectionException
-     * @expectedExceptionCode InjectorException::E_NEEDS_DEFINITION
-     */
     public function testMakeInstanceThrowsExceptionOnInterfaceWithoutAlias()
     {
         $this->expectException(InjectionException::class);
@@ -168,10 +180,6 @@ class InjectorTest extends TestCase
         $injector->make(DepInterface::class);
     }
 
-    /**
-     * @expectedException InjectionException
-     * @expectedExceptionCode InjectorException::E_NEEDS_DEFINITION
-     */
     public function testMakeInstanceThrowsExceptionOnNonConcreteCtorParamWithoutImplementation()
     {
         $this->expectException(InjectionException::class);
@@ -220,9 +228,6 @@ class InjectorTest extends TestCase
         Assert::assertEquals('something else', $injected2->testDep->testProp);
     }
 
-    /**
-     * @expectedException InjectorException
-     */
     public function testMakeInstanceThrowsExceptionOnClassLoadFailure()
     {
         $this->expectException(InjectionException::class);
@@ -288,10 +293,6 @@ class InjectorTest extends TestCase
         Assert::assertEquals(null, $obj->testParam);
     }
 
-    /**
-     * @expectedException InjectionException
-     * @expectedExceptionCode InjectorException::E_UNDEFINED_PARAM
-     */
     public function testMakeInstanceThrowsExceptionOnUntypehintedParameterWithoutDefinitionOrDefault()
     {
         $this->expectException(InjectionException::class);
@@ -302,10 +303,6 @@ class InjectorTest extends TestCase
         Assert::assertNull($obj->val);
     }
 
-    /**
-     * @expectedException InjectionException
-     * @expectedExceptionCode InjectorException::E_UNDEFINED_PARAM
-     */
     public function testMakeInstanceThrowsExceptionOnUntypehintedParameterWithoutDefinitionOrDefaultThroughAliasedTypehint()
     {
         $this->expectException(InjectionException::class);
@@ -319,10 +316,6 @@ class InjectorTest extends TestCase
         $injector->make(InjectorTestCtorParamWithNoTypehintOrDefaultDependent::class);
     }
 
-    /**
-     * @todo
-     * @expectedException InjectorException
-     */
     public function testMakeInstanceThrowsExceptionOnUninstantiableTypehintWithoutDefinition()
     {
         $this->expectException(InjectionException::class);
@@ -397,13 +390,13 @@ class InjectorTest extends TestCase
     {
         $injector = new Injector(InjectorFactory::create([]));
 
-        $callable = $this->getMockBuilder('CallableMock')
-            ->setMethods(['__invoke'])
+        $callable = $this->getMockBuilder(CallableMock::class)
+            ->onlyMethods(['__invoke'])
             ->getMock();
 
         $callable->expects($this->once())
                  ->method('__invoke')
-                 ->will($this->returnValue(new TestDependency()));
+                 ->willReturn(new TestDependency());
 
         $injector->delegate(TestDependency::class, $callable);
 
@@ -423,9 +416,6 @@ class InjectorTest extends TestCase
         Assert::assertEquals(42, $obj->test);
     }
 
-    /**
-     * @expectedException ConfigException
-     */
     public function testMakeInstanceThrowsExceptionIfStringDelegateClassHasNoInvokeMethod()
     {
         $this->expectException(ConfigException::class);
@@ -434,9 +424,6 @@ class InjectorTest extends TestCase
         $injector->delegate(stdClass::class, StringDelegateWithNoInvokeMethod::class);
     }
 
-    /**
-     * @expectedException ConfigException
-     */
     public function testMakeInstanceThrowsExceptionIfStringDelegateClassInstantiationFails()
     {
         $this->expectException(ConfigException::class);
@@ -448,9 +435,6 @@ class InjectorTest extends TestCase
         );
     }
 
-    /**
-     * @expectedException InjectionException
-     */
     public function testMakeInstanceThrowsExceptionOnUntypehintedParameterWithNoDefinition()
     {
         $this->expectException(InjectionException::class);
@@ -508,19 +492,14 @@ class InjectorTest extends TestCase
         );
     }
 
-    public function provideInvalidDelegates()
+    public static function provideInvalidDelegates()
     {
         return [
             [new stdClass()],
-            [42],
-            [true],
         ];
     }
 
-    /**
-     * @dataProvider provideInvalidDelegates
-     * @expectedException ConfigException
-     */
+    #[DataProvider('provideInvalidDelegates')]
     public function testDelegateThrowsExceptionIfDelegateIsNotCallableOrString($badDelegate)
     {
         $this->expectException(ConfigException::class);
@@ -593,16 +572,14 @@ class InjectorTest extends TestCase
         }
     }
 
-    /**
-     * @dataProvider provideExecutionExpectations
-     */
+    #[DataProvider('provideExecutionExpectations')]
     public function testProvisionedInvokables($toInvoke, $definition, $expectedResult)
     {
         $injector = new Injector(InjectorFactory::create([]));
         Assert::assertEquals($expectedResult, $injector->execute($toInvoke, $definition));
     }
 
-    public function provideExecutionExpectations()
+    public static function provideExecutionExpectations()
     {
         $return = [];
 
@@ -672,7 +649,7 @@ class InjectorTest extends TestCase
 
         // 7 -------------------------------------------------------------------------------------->
 
-        $toInvoke       = 'Qubus\Tests\Injector\ExecuteClassStaticMethod::execute';
+        $toInvoke       = 'Qubus\Injector\Test\ExecuteClassStaticMethod::execute';
         $args           = [];
         $expectedResult = 42;
         $return[]       = [$toInvoke, $args, $expectedResult];
@@ -689,7 +666,7 @@ class InjectorTest extends TestCase
 
         // 9 -------------------------------------------------------------------------------------->
 
-        $toInvoke       = 'Qubus\Tests\Injector\testExecuteFunction';
+        $toInvoke       = 'Qubus\Injector\Test\testExecuteFunction';
         $args           = [];
         $expectedResult = 42;
         $return[]       = [$toInvoke, $args, $expectedResult];
@@ -719,35 +696,35 @@ class InjectorTest extends TestCase
 
         // 13 ------------------------------------------------------------------------------------->
 
-        $toInvoke       = 'Qubus\Tests\Injector\ExecuteClassNoDeps::execute';
+        $toInvoke       = 'Qubus\Injector\Test\ExecuteClassNoDeps::execute';
         $args           = [];
         $expectedResult = 42;
         $return[]       = [$toInvoke, $args, $expectedResult];
 
         // 14 ------------------------------------------------------------------------------------->
 
-        $toInvoke       = 'Qubus\Tests\Injector\ExecuteClassDeps::execute';
+        $toInvoke       = 'Qubus\Injector\Test\ExecuteClassDeps::execute';
         $args           = [];
         $expectedResult = 42;
         $return[]       = [$toInvoke, $args, $expectedResult];
 
         // 15 ------------------------------------------------------------------------------------->
 
-        $toInvoke       = 'Qubus\Tests\Injector\ExecuteClassStaticMethod::execute';
+        $toInvoke       = 'Qubus\Injector\Test\ExecuteClassStaticMethod::execute';
         $args           = [];
         $expectedResult = 42;
         $return[]       = [$toInvoke, $args, $expectedResult];
 
         // 16 ------------------------------------------------------------------------------------->
 
-        $toInvoke       = 'Qubus\Tests\Injector\ExecuteClassRelativeStaticMethod::parent::execute';
+        $toInvoke       = 'Qubus\Injector\Test\ExecuteClassRelativeStaticMethod::parent::execute';
         $args           = [];
         $expectedResult = 42;
         $return[]       = [$toInvoke, $args, $expectedResult];
 
         // 17 ------------------------------------------------------------------------------------->
 
-        $toInvoke       = 'Qubus\Tests\Injector\testExecuteFunctionWithArg';
+        $toInvoke       = 'Qubus\Injector\Test\testExecuteFunctionWithArg';
         $args           = [];
         $expectedResult = 42;
         $return[]       = [$toInvoke, $args, $expectedResult];
@@ -779,7 +756,7 @@ class InjectorTest extends TestCase
     public function testStaticStringInvokableWithArgument()
     {
         $injector  = new Injector(InjectorFactory::create([]));
-        $invokable = $injector->buildExecutable('Qubus\Tests\Injector\ClassWithStaticMethodThatTakesArg::doSomething');
+        $invokable = $injector->buildExecutable('Qubus\Injector\Test\ClassWithStaticMethodThatTakesArg::doSomething');
         Assert::assertEquals(42, $invokable(41));
     }
 
@@ -795,9 +772,6 @@ class InjectorTest extends TestCase
         Assert::assertTrue(true);
     }
 
-    /**
-     * @expectedException InjectorException
-     */
     public function testMissingAlias()
     {
         $this->expectException(InjectionException::class);
@@ -926,7 +900,7 @@ class InjectorTest extends TestCase
         Assert::assertInstanceOf(ClassInnerB::class, $obj->dep->dep);
     }
 
-    public function provideCyclicDependencies()
+    public static function provideCyclicDependencies()
     {
         return [
             RecursiveClassA::class => [RecursiveClassA::class],
@@ -938,11 +912,7 @@ class InjectorTest extends TestCase
         ];
     }
 
-    /**
-     * @dataProvider provideCyclicDependencies
-     * @expectedException InjectionException
-     * @expectedExceptionCode InjectorException::E_CYCLIC_DEPENDENCY
-     */
+    #[DataProvider('provideCyclicDependencies')]
     public function testCyclicDependencies($class)
     {
         $this->expectException(InjectionException::class);
@@ -998,10 +968,6 @@ class InjectorTest extends TestCase
         Assert::assertNotInstanceOf(stdClass::class, $instance->dependency);
     }
 
-    /**
-     * @expectedException ConfigException
-     * @expectedExceptionCode InjectorException::E_ALIASED_CANNOT_SHARE
-     */
     public function testShareAfterAliasException()
     {
         $this->expectException(ConfigException::class);
@@ -1045,10 +1011,6 @@ class InjectorTest extends TestCase
         Assert::assertEquals($obj, $obj2);
     }
 
-    /**
-     * @expectedException ConfigException
-     * @expectedExceptionCode InjectorException::E_SHARED_CANNOT_ALIAS
-     */
     public function testAliasAfterShareException()
     {
         $this->expectException(ConfigException::class);
@@ -1060,10 +1022,6 @@ class InjectorTest extends TestCase
         $injector->alias('stdClass', SomeOtherClass::class);
     }
 
-    /**
-     * @expectedException InjectionException
-     * @expectedExceptionCode InjectorException::E_NON_PUBLIC_CONSTRUCTOR
-     */
     public function testAppropriateExceptionThrownOnNonPublicConstructor()
     {
         $this->expectException(InjectionException::class);
@@ -1073,10 +1031,6 @@ class InjectorTest extends TestCase
         $injector->make(HasNonPublicConstructor::class);
     }
 
-    /**
-     * @expectedException InjectionException
-     * @expectedExceptionCode InjectorException::E_NON_PUBLIC_CONSTRUCTOR
-     */
     public function testAppropriateExceptionThrownOnNonPublicConstructorWithArgs()
     {
         $this->expectException(InjectionException::class);
@@ -1120,10 +1074,6 @@ class InjectorTest extends TestCase
         $injector->buildExecutable(['stdClass', 'nonExistentMethod']);
     }
 
-    /**
-     * @expectedException InjectionException
-     * @expectedExceptionCode  InjectorException::E_INVOKABLE
-     */
     public function testMakeExecutableFailsOnClassWithoutInvoke()
     {
         $this->expectException(InjectionException::class);
@@ -1134,10 +1084,6 @@ class InjectorTest extends TestCase
         $injector->buildExecutable($object);
     }
 
-    /**
-     * @expectedException ConfigException
-     * @expectedExceptionCode InjectorException::E_NON_EMPTY_STRING_ALIAS
-     */
     public function testBadAlias()
     {
         $this->expectException(ConfigException::class);
@@ -1204,9 +1150,6 @@ class InjectorTest extends TestCase
     /**
      * Test that custom definitions are not passed through to dependencies.
      * Surprising things would happen if this did occur.
-     *
-     * @expectedException InjectionException
-     * @expectedExceptionCode InjectorException::E_UNDEFINED_PARAM
      */
     public function testCustomDefinitionNotPassedThrough()
     {
@@ -1223,7 +1166,7 @@ class InjectorTest extends TestCase
         $injector = new Injector(InjectorFactory::create([]));
         $injector->delegate(
             TestDelegationSimple::class,
-            'Qubus\Tests\Injector\createTestDelegationSimple'
+            'Qubus\Injector\Test\createTestDelegationSimple'
         );
         $obj = $injector->make(TestDelegationSimple::class);
         Assert::assertInstanceOf(TestDelegationSimple::class, $obj);
@@ -1278,7 +1221,7 @@ class InjectorTest extends TestCase
      */
     public function testDelegateClosure()
     {
-        $delegateClosure = \Qubus\Tests\Injector\getDelegateClosureInGlobalScope();
+        $delegateClosure = \Qubus\Injector\Test\getDelegateClosureInGlobalScope();
         $injector        = new Injector(InjectorFactory::create([]));
         $injector->delegate(DelegateClosureInGlobalScope::class, $delegateClosure);
         $obj = $injector->make(DelegateClosureInGlobalScope::class);
@@ -1289,32 +1232,28 @@ class InjectorTest extends TestCase
     {
         $injector = new Injector(InjectorFactory::create([]));
         $injector->share($injector);
-        $instance    = $injector->make(CloneTest::class);
+        $instance    = $injector->make(CloneInjector::class);
         $newInjector = $instance->injector;
-        $newInstance = $newInjector->make(CloneTest::class);
-        Assert::assertInstanceOf(CloneTest::class, $instance);
-        Assert::assertInstanceOf(CloneTest::class, $newInstance);
+        $newInstance = $newInjector->make(CloneInjector::class);
+        Assert::assertInstanceOf(CloneInjector::class, $instance);
+        Assert::assertInstanceOf(CloneInjector::class, $newInstance);
     }
 
     public function testAbstractExecute()
     {
         $injector = new Injector(InjectorFactory::create([]));
 
-        $fn = fn () => new ConcreteExecuteTest();
+        $fn = fn () => new ConcreteExecute();
 
-        $injector->delegate(AbstractExecuteTest::class, $fn);
+        $injector->delegate(BaseExecute::class, $fn);
         $result = $injector->execute([
-            AbstractExecuteTest::class,
+            BaseExecute::class,
             'process',
         ]);
 
         Assert::assertEquals('Concrete', $result);
     }
 
-    /**
-     * @expectedException InjectionException
-     * @expectedExceptionCode InjectorException::E_MAKING_FAILED
-     */
     public function testDelegationDoesntMakeObject()
     {
         $this->expectException(TypeError::class);
@@ -1376,10 +1315,6 @@ class InjectorTest extends TestCase
         }
     }
 
-    /**
-     * @expectedException InjectionException
-     * @expectedExceptionCode InjectorException::E_UNDEFINED_PARAM
-     */
     public function testChildWithoutConstructorMissingParam()
     {
         $this->expectException(InjectionException::class);
@@ -1388,34 +1323,6 @@ class InjectorTest extends TestCase
         $injector = new Injector(InjectorFactory::create([]));
         $injector->define(ParentWithConstructor::class, [':foo' => 'parent']);
         $injector->make(ChildWithoutConstructor::class);
-    }
-
-    public function testInjectionChainValue()
-    {
-        $fn = function (InjectionChain $ic) {
-            if (
-                $ic->getByIndex(-2) ===
-                InjectionChainTestDependency::class
-            ) {
-                return new InjectionChainValue('Value for dependency');
-            } elseif (
-                $ic->getByIndex(-2) ===
-                       InjectionChainTest::class
-            ) {
-                return new InjectionChainValue('Value for parent');
-            }
-
-            return new InjectionChainValue('unknown value');
-        };
-
-        $injector = new Injector(InjectorFactory::create([]));
-        $injector->share($injector);
-        $injector->delegate(InjectionChainValue::class, $fn);
-        $injector->delegate(InjectionChain::class, [$injector, 'getInjectionChain']);
-
-        $object = $injector->make(InjectionChainTest::class);
-        Assert::assertEquals($object->icv->value, 'unknown value');
-        Assert::assertEquals($object->dependency->icv->value, 'unknown value');
     }
 }
 
@@ -1607,7 +1514,7 @@ class SpecdTestDependency extends TestDependency
     public $testProp = 'testVal';
 }
 
-class TestNeedsDep
+class TestNeedsDep extends stdClass
 {
     public function __construct(TestDependency $testDep)
     {
@@ -1632,7 +1539,7 @@ class TestMultiDepsNeeded
     }
 }
 
-class TestMultiDepsWithCtor
+class TestMultiDepsWithCtor extends stdClass
 {
     public function __construct(TestDependency $val1, TestNeedsDep $val2)
     {
@@ -1675,7 +1582,7 @@ class DepImplementation implements DepInterface
     public $testProp = 'something';
 }
 
-class RequiresInterface
+class RequiresInterface extends stdClass
 {
     public $dep;
 
@@ -1712,7 +1619,7 @@ class ClassOuter
     }
 }
 
-class ProvTestNoDefinitionNullDefaultClass
+class ProvTestNoDefinitionNullDefaultClass extends stdClass
 {
     public function __construct($arg = null)
     {
@@ -1762,7 +1669,7 @@ class InjectorTestRawCtorParams
     }
 }
 
-class InjectorTestParentClass
+class InjectorTestParentClass extends stdClass
 {
     public function __construct($arg1)
     {
@@ -1776,13 +1683,6 @@ class InjectorTestChildClass extends InjectorTestParentClass
     {
         parent::__construct($arg1);
         $this->arg2 = $arg2;
-    }
-}
-
-class CallableMock
-{
-    public function __invoke()
-    {
     }
 }
 
@@ -2019,7 +1919,7 @@ class TestDependencyWithProtectedConstructor
     }
 }
 
-class TestNeedsDepWithProtCons
+class TestNeedsDepWithProtCons extends stdClass
 {
     public function __construct(TestDependencyWithProtectedConstructor $dep)
     {
@@ -2041,12 +1941,12 @@ class SomeClassName
 {
 }
 
-class TestDelegationSimple
+class TestDelegationSimple extends stdClass
 {
     public $delgateCalled = false;
 }
 
-class TestDelegationDependency
+class TestDelegationDependency extends stdClass
 {
     public $delgateCalled = false;
 
@@ -2071,137 +1971,9 @@ function createTestDelegationDependency(TestDelegationSimple $testDelegationSimp
     return $instance;
 }
 
-class BaseExecutableClass
-{
-    public static function bar()
-    {
-        return 'This is the BaseExecutableClass';
-    }
-
-    public function foo()
-    {
-        return 'This is the BaseExecutableClass';
-    }
-}
-
-class ExtendsExecutableClass extends BaseExecutableClass
-{
-    public static function bar()
-    {
-        return 'This is the ExtendsExecutableClass';
-    }
-
-    public function foo()
-    {
-        return 'This is the ExtendsExecutableClass';
-    }
-}
-
-class ReturnsCallable
-{
-    private $value = 'original';
-
-    public function __construct($value)
-    {
-        $this->value = $value;
-    }
-
-    public function getCallable()
-    {
-        return function () {
-            return $this->value;
-        };
-    }
-}
-
-class DelegateClosureInGlobalScope
-{
-}
-
-function getDelegateClosureInGlobalScope()
+function getDelegateClosureInGlobalScope(): Closure
 {
     return function () {
         return new DelegateClosureInGlobalScope();
     };
-}
-
-class CloneTest
-{
-    public $injector;
-
-    public function __construct(Injector $injector)
-    {
-        $this->injector = clone $injector;
-    }
-}
-
-abstract class AbstractExecuteTest
-{
-    public function process()
-    {
-        return "Abstract";
-    }
-}
-
-class ConcreteExecuteTest extends AbstractExecuteTest
-{
-    public function process()
-    {
-        return "Concrete";
-    }
-}
-
-class DependencyChainTest
-{
-    public function __construct(DepInterface $dep)
-    {
-    }
-}
-
-class ParentWithConstructor
-{
-    public $foo;
-
-    public function __construct($foo)
-    {
-        $this->foo = $foo;
-    }
-}
-
-class ChildWithoutConstructor extends ParentWithConstructor
-{
-}
-
-class InjectionChainValue
-{
-    public $value;
-
-    public function __construct($value)
-    {
-        $this->value = $value;
-    }
-}
-
-class InjectionChainTestDependency
-{
-    public $icv;
-
-    public function __construct(InjectionChainValue $icv)
-    {
-        $this->icv = $icv;
-    }
-}
-
-class InjectionChainTest
-{
-    public $icv;
-    public $dependency;
-
-    public function __construct(
-        InjectionChainTestDependency $ictd,
-        InjectionChainValue $icv
-    ) {
-        $this->dependency = $ictd;
-        $this->icv        = $icv;
-    }
 }

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qubus\Injector\Tests\ServiceProvider;
+namespace Qubus\Injector\Test\ServiceProvider;
 
 use Qubus\Injector\ServiceProvider\BaseServiceProvider;
 
@@ -12,5 +12,15 @@ class FakeServiceProvider extends BaseServiceProvider
     {
         $this->container->alias('user.model', UserModel::class)
             ->define('user.model', [':userName' => new Person('Joseph Smith')]);
+    }
+
+    public function callBootingCallbacks(): void
+    {
+        // TODO: Implement callBootingCallbacks() method.
+    }
+
+    public function callBootedCallbacks(): void
+    {
+
     }
 }

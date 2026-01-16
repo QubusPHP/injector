@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qubus\Injector\Tests\ServiceProvider;
+namespace Qubus\Injector\Test\ServiceProvider;
 
 class Person implements Identity
 {

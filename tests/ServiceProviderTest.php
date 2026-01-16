@@ -1,13 +1,13 @@
 <?php
 
-namespace Qubus\Tests\Injector;
+namespace Qubus\Injector\Test;
 
 use PHPUnit\Framework\Assert;
 use PHPUnit\Framework\TestCase;
 use Qubus\Injector\Config\InjectorFactory;
 use Qubus\Injector\Injector;
-use Qubus\Injector\Tests\ServiceProvider\FakeServiceProvider;
-use Qubus\Injector\Tests\ServiceProvider\Person;
+use Qubus\Injector\Test\ServiceProvider\FakeServiceProvider;
+use Qubus\Injector\Test\ServiceProvider\Person;
 
 class ServiceProviderTest extends TestCase
 {

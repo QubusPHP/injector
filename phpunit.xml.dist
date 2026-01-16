@@ -1,17 +1,30 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<phpunit bootstrap="vendor/autoload.php"
-         backupGlobals="false"
-         backupStaticAttributes="false"
-         colors="true"
-         verbose="true"
-         convertErrorsToExceptions="true"
-         convertNoticesToExceptions="true"
-         convertWarningsToExceptions="true"
-         processIsolation="false"
-         stopOnFailure="false">
+<phpunit
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="./vendor/phpunit/phpunit/phpunit.xsd"
+        bootstrap="vendor/autoload.php" colors="true"
+        displayDetailsOnTestsThatTriggerDeprecations="true"
+        processIsolation="false"
+        stopOnFailure="false">
     <testsuites>
-        <testsuite name="Masonry Test Suite">
-            <directory>Tests</directory>
+        <testsuite name="Injector Test Suite">
+            <directory>tests</directory>
         </testsuite>
     </testsuites>
+    <source>
+        <include>
+            <directory suffix=".php">./Cache</directory>
+            <directory suffix=".php">./Config</directory>
+            <directory suffix=".php">./Psr11</directory>
+            <directory suffix=".php">./ServiceProvider</directory>
+            <file>ConfigException.php</file>
+            <file>Executable.php</file>
+            <file>Injection.php</file>
+            <file>InjectionChain.php</file>
+            <file>InjectionException.php</file>
+            <file>Injector.php</file>
+            <file>InjectorException.php</file>
+            <file>InvalidMappingsException.php</file>
+        </include>
+    </source>
 </phpunit>
