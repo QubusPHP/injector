@@ -22,6 +22,38 @@ interface Bootable
     public function boot(): void;
 
     /**
+     * Register a booting callback to be run before the "boot" method is called.
+     *
+     * @param \Closure $callback
+     * @return void
+     */
+    public function booting(\Closure $callback): void;
+
+    /**
+     * Register a booted callback to be run after the "boot" method is called.
+     *
+     * @param \Closure $callback
+     * @return void
+     */
+    public function booted(\Closure $callback): void;
+
+    /**
+     * Register publishable paths for this provider.
+     *
+     * @param array<string,string> $paths [from => tag]
+     * @param string|null $group Optional tag/group name ("config", "migrations", etc.)
+     */
+    public function publishes(array $paths, ?string $group = null): void;
+
+    /**
+     * Get all publishable paths for this provider.
+     *
+     * @param string|null $tag Restrict to a tag (e.g. "config", "migrations")
+     * @return array<string,string> [from => tag]
+     */
+    public function pathsToPublish(?string $tag = null): array;
+
+    /**
      * Call the registered booting callbacks.
      *
      * @return void
