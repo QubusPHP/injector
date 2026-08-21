@@ -14,11 +14,10 @@ declare(strict_types=1);
 namespace Qubus\Injector\Psr11;
 
 use Psr\Container\ContainerInterface;
-use Qubus\Exception\Exception;
-use Qubus\Exception\Http\Client\NotFoundException;
 use Qubus\Injector\Injector;
 use Qubus\Injector\ServiceContainer;
 use ReflectionClass;
+use Throwable;
 
 use function array_filter;
 use function class_exists;
@@ -26,6 +25,14 @@ use function sprintf;
 
 class Container extends Injector implements ContainerInterface, ServiceContainer
 {
+    /**
+     * Retained for subclasses that inspect the historical lookup cache.
+     *
+     * Values are recomputed on every call to avoid stale results after a
+     * registration is added.
+     *
+     * @var array<string, bool>
+     */
     protected array $has = [];
 
     /**
@@ -42,7 +49,7 @@ class Container extends Injector implements ContainerInterface, ServiceContainer
 
         try {
             return $this->make($id);
-        } catch (Exception $previous) {
+        } catch (Throwable $previous) {
             throw new ContainerException(
                 sprintf('Unable to get: %s', $id),
                 0,
@@ -56,15 +63,11 @@ class Container extends Injector implements ContainerInterface, ServiceContainer
      */
     public function has(string $id): bool
     {
-        static $filter = Injector::I_BINDINGS
+        $filter = Injector::I_BINDINGS
         | Injector::I_DELEGATES
         | Injector::I_PREPARES
         | Injector::I_ALIASES
         | Injector::I_SHARES;
-
-        if (isset($this->has[$id])) {
-            return $this->has[$id];
-        }
 
         $definitions = array_filter($this->inspect($id, $filter));
         if (! empty($definitions)) {

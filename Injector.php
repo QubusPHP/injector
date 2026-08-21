@@ -17,7 +17,6 @@ use Closure;
 use ProxyManager\Factory\LazyLoadingValueHolderFactory;
 use ProxyManager\Proxy\LazyLoadingInterface;
 use Qubus\Exception\Data\TypeException;
-use Qubus\Exception\Exception;
 use Qubus\Injector\Cache\CachingReflector;
 use Qubus\Injector\Config\Config;
 use ReflectionException;
@@ -155,33 +154,41 @@ class Injector implements ServiceContainer
             static::PREPARATIONS         => 'definePreparations',
         ];
         try {
+            $configuredMappings = [];
             foreach ($configKeys as $key => $method) {
-                $$key = $config->get($key, []);
+                $configuredMappings[$key] = $config->get($key, []);
+                if (! is_array($configuredMappings[$key])) {
+                    throw new InvalidMappingsException(sprintf('Mapping "%s" must be an array.', $key));
+                }
             }
 
-            $standardAliases = array_merge(
-                $sharedAliases,
-                $standardAliases
+            $configuredMappings[static::STANDARD_ALIASES] = array_merge(
+                $configuredMappings[static::SHARED_ALIASES],
+                $configuredMappings[static::STANDARD_ALIASES]
             );
-        } catch (Exception $exception) {
+        } catch (Throwable $exception) {
             throw new InvalidMappingsException(
                 sprintf(
                     'Failed to read needed keys from config. Reason: "%1$s".',
                     $exception->getMessage()
-                )
+                ),
+                0,
+                $exception
             );
         }
 
         try {
             foreach ($configKeys as $key => $method) {
-                array_walk($$key, [$this, $method]);
+                array_walk($configuredMappings[$key], [$this, $method]);
             }
-        } catch (Exception $exception) {
+        } catch (Throwable $exception) {
             throw new InvalidMappingsException(
                 sprintf(
                     'Failed to set up dependency injector. Reason: "%1$s".',
                     $exception->getMessage()
-                )
+                ),
+                0,
+                $exception
             );
         }
     }
@@ -261,7 +268,7 @@ class Injector implements ServiceContainer
      */
     protected function defineArgumentProviders(array $argumentSetup, string $argument): void
     {
-        if (! array_key_exists('mappings', $argumentSetup)) {
+        if (! array_key_exists('mappings', $argumentSetup) || ! is_array($argumentSetup['mappings'])) {
             throw new InvalidMappingsException(
                 sprintf(
                     'Failed to define argument providers for argument "%1$s". '
@@ -271,10 +278,17 @@ class Injector implements ServiceContainer
             );
         }
 
+        $interface = $argumentSetup['interface'] ?? null;
+        if ($interface !== null && ! is_string($interface)) {
+            throw new InvalidMappingsException(
+                sprintf('The interface for argument "%s" must be a string or null.', $argument)
+            );
+        }
+
         array_walk(
             $argumentSetup['mappings'],
             [$this, 'addArgumentDefinition'],
-            [$argument, $argumentSetup['interface'] ?: null]
+            [$argument, $interface ?: null]
         );
     }
 
@@ -319,17 +333,17 @@ class Injector implements ServiceContainer
      */
     protected function getArgumentProxy(string $alias, string $interface, callable $callable)
     {
-        if (null === $interface) {
+        if ('' === $interface) {
             $interface = 'stdClass';
         }
 
         $factory     = new LazyLoadingValueHolderFactory();
         $initializer = function (
-            &$wrappedObject,
-            LazyLoadingInterface $proxy,
-            $method,
-            array $parameters,
-            &$initializer
+            &$wrappedObject = null,
+            ?LazyLoadingInterface $proxy = null,
+            string $method = '',
+            array $parameters = [],
+            ?Closure &$initializer = null
         ) use (
             $alias,
             $interface,
@@ -370,13 +384,13 @@ class Injector implements ServiceContainer
      */
     public function alias(string $original, string $alias): ServiceContainer
     {
-        if (empty($original) || ! is_string($original)) {
+        if ($original === '') {
             throw new ConfigException(
                 InjectorException::M_NON_EMPTY_STRING_ALIAS,
                 InjectorException::E_NON_EMPTY_STRING_ALIAS
             );
         }
-        if (empty($alias) || ! is_string($alias)) {
+        if ($alias === '') {
             throw new ConfigException(
                 InjectorException::M_NON_EMPTY_STRING_ALIAS,
                 InjectorException::E_NON_EMPTY_STRING_ALIAS
@@ -384,6 +398,26 @@ class Injector implements ServiceContainer
         }
 
         $originalNormalized = $this->normalizeName($original);
+        $aliasNormalized = $this->normalizeName($alias);
+
+        $target = $aliasNormalized;
+        while (isset($this->aliases[$target])) {
+            if ($target === $originalNormalized) {
+                throw new ConfigException(
+                    sprintf(InjectorException::M_CYCLIC_ALIAS, $original, $alias),
+                    InjectorException::E_CYCLIC_ALIAS
+                );
+            }
+
+            $target = $this->normalizeName($this->aliases[$target]);
+        }
+
+        if ($target === $originalNormalized) {
+            throw new ConfigException(
+                sprintf(InjectorException::M_CYCLIC_ALIAS, $original, $alias),
+                InjectorException::E_CYCLIC_ALIAS
+            );
+        }
 
         if (isset($this->shares[$originalNormalized])) {
             throw new ConfigException(
@@ -397,7 +431,6 @@ class Injector implements ServiceContainer
         }
 
         if (array_key_exists($originalNormalized, $this->shares)) {
-            $aliasNormalized = $this->normalizeName($alias);
             $this->shares[$aliasNormalized] = null;
             unset($this->shares[$originalNormalized]);
         }
@@ -444,7 +477,17 @@ class Injector implements ServiceContainer
     private function resolveAlias(string $name): array
     {
         $normalizedName = $this->normalizeName($name);
-        if (isset($this->aliases[$normalizedName])) {
+        $visited = [];
+
+        while (isset($this->aliases[$normalizedName])) {
+            if (isset($visited[$normalizedName])) {
+                throw new ConfigException(
+                    sprintf(InjectorException::M_CYCLIC_ALIAS, $name, $this->aliases[$normalizedName]),
+                    InjectorException::E_CYCLIC_ALIAS
+                );
+            }
+
+            $visited[$normalizedName] = true;
             $name = $this->aliases[$normalizedName];
             $normalizedName = $this->normalizeName($name);
         }
@@ -477,7 +520,6 @@ class Injector implements ServiceContainer
         if ($this->isExecutable($callableOrMethodStr) === false) {
             throw InjectionException::fromInvalidCallable(
                 $this->inProgressMakes,
-                InjectorException::E_INVOKABLE,
                 $callableOrMethodStr
             );
         }
@@ -511,7 +553,7 @@ class Injector implements ServiceContainer
         if ($this->isExecutable($callableOrMethodStr) === false) {
             $this->generateInvalidCallableError($callableOrMethodStr);
         }
-        $normalizedName = $this->normalizeName($name);
+        [, $normalizedName] = $this->resolveAlias($name);
         $this->delegates[$normalizedName] = $callableOrMethodStr;
 
         return $this;
@@ -623,6 +665,14 @@ class Injector implements ServiceContainer
                 $obj = $this->provisionInstance($className, $normalizedClass, $args);
             }
 
+            if (! is_object($obj)) {
+                throw new InjectionException(
+                    $this->inProgressMakes,
+                    sprintf(InjectorException::M_MAKING_FAILED, $className, gettype($obj)),
+                    InjectorException::E_MAKING_FAILED
+                );
+            }
+
             $obj = $this->prepareInstance($obj, $normalizedClass);
 
             if (array_key_exists($normalizedClass, $this->shares)) {
@@ -630,9 +680,6 @@ class Injector implements ServiceContainer
             }
 
             unset($this->inProgressMakes[$normalizedClass]);
-        } catch (Exception $exception) {
-            unset($this->inProgressMakes[$normalizedClass]);
-            throw $exception;
         } catch (Throwable $exception) {
             unset($this->inProgressMakes[$normalizedClass]);
             throw $exception;
@@ -655,6 +702,8 @@ class Injector implements ServiceContainer
      * @param string $normalizedClass
      * @param array $args
      * @return mixed|object
+     * @throws ReflectionException
+     * @throws TypeException
      */
     private function buildWrappedObject(string $className, string $normalizedClass, array $args): mixed
     {
@@ -667,6 +716,13 @@ class Injector implements ServiceContainer
         return $this->prepareInstance($wrappedObject, $normalizedClass);
     }
 
+    /**
+     * @param string $className
+     * @param string $normalizedClass
+     * @param array $definition
+     * @return mixed|object|null
+     * @throws TypeException
+     */
     private function provisionInstance(string $className, string $normalizedClass, array $definition)
     {
         try {
@@ -702,6 +758,9 @@ class Injector implements ServiceContainer
         }
     }
 
+    /**
+     * @throws ReflectionException
+     */
     private function instantiateWithoutConstructorParams(string $className)
     {
         $reflClass = $this->reflector->getClass($className);
@@ -718,6 +777,10 @@ class Injector implements ServiceContainer
         return new $className();
     }
 
+    /**
+     * @throws ReflectionException
+     * @throws TypeException
+     */
     private function provisionFuncArgs(
         ReflectionFunctionAbstract $reflFunc,
         array $definition,
@@ -761,19 +824,21 @@ class Injector implements ServiceContainer
         return $args;
     }
 
-    private function buildArgFromParamDefineArr(array $definition)
+    private function buildArgFromParamDefineArr(mixed $definition)
     {
         if (! is_array($definition)) {
             throw new InjectionException(
-                $this->inProgressMakes
-                // @TODO Add message
+                $this->inProgressMakes,
+                InjectorException::M_INVALID_DEFINITION,
+                InjectorException::E_INVALID_DEFINITION
             );
         }
 
         if (! isset($definition[0], $definition[1])) {
             throw new InjectionException(
-                $this->inProgressMakes
-                // @TODO Add message
+                $this->inProgressMakes,
+                InjectorException::M_INVALID_DEFINITION,
+                InjectorException::E_INVALID_DEFINITION
             );
         }
 
@@ -782,6 +847,10 @@ class Injector implements ServiceContainer
         return $this->make($class, $definition);
     }
 
+    /**
+     * @throws ReflectionException
+     * @throws TypeException
+     */
     private function buildArgFromDelegate(string $paramName, $callableOrMethodStr)
     {
         if ($this->isExecutable($callableOrMethodStr) === false) {
@@ -855,7 +924,11 @@ class Injector implements ServiceContainer
         return $arg;
     }
 
-    private function prepareInstance(object|string $obj, $normalizedClass)
+    /**
+     * @throws ReflectionException
+     * @throws TypeException
+     */
+    private function prepareInstance(object $obj, string $normalizedClass): object
     {
         if (isset($this->prepares[$normalizedClass])) {
             $prepare = $this->prepares[$normalizedClass];
@@ -868,18 +941,6 @@ class Injector implements ServiceContainer
 
         $interfaces = class_implements($obj);
 
-        if ($interfaces === false) {
-            throw new InjectionException(
-                $this->inProgressMakes,
-                sprintf(
-                    InjectorException::M_MAKING_FAILED,
-                    $normalizedClass,
-                    gettype($obj)
-                ),
-                InjectorException::E_MAKING_FAILED
-            );
-        }
-
         if (empty($interfaces)) {
             return $obj;
         }
@@ -889,7 +950,7 @@ class Injector implements ServiceContainer
         foreach ($prepares as $interfaceName => $prepare) {
             $executable = $this->buildExecutable($prepare);
             $result = $executable($obj, $this);
-            if ($result instanceof $normalizedClass) {
+            if ($result instanceof $interfaceName) {
                 $obj = $result;
             }
         }
@@ -899,6 +960,10 @@ class Injector implements ServiceContainer
 
     /**
      * {@inheritDoc}
+     * @param callable|string|array|object $callableOrMethodStr
+     * @param array $args
+     * @return mixed
+     * @throws ReflectionException
      * @throws TypeException
      */
     public function execute(callable|string|array|object $callableOrMethodStr, array $args = [])
@@ -932,6 +997,9 @@ class Injector implements ServiceContainer
         return new Executable($reflFunc, $invocationObj);
     }
 
+    /**
+     * @throws ReflectionException
+     */
     private function buildExecutableStruct(callable|string|array|object $callableOrMethodStr): array
     {
         if (is_string($callableOrMethodStr)) {
@@ -959,7 +1027,10 @@ class Injector implements ServiceContainer
         return $executableStruct;
     }
 
-    private function buildExecutableStructFromString(object|string $stringExecutable): array
+    /**
+     * @throws ReflectionException
+     */
+    private function buildExecutableStructFromString(string $stringExecutable): array
     {
         if (function_exists($stringExecutable)) {
             $callableRefl = $this->reflector->getFunction($stringExecutable);
@@ -968,7 +1039,7 @@ class Injector implements ServiceContainer
             $invocationObj = $this->make($stringExecutable);
             $callableRefl = $this->reflector->getMethod($invocationObj, '__invoke');
             $executableStruct = [$callableRefl, $invocationObj];
-        } elseif (strpos($stringExecutable, '::') !== false) {
+        } elseif (str_contains($stringExecutable, '::')) {
             [$class, $method] = explode('::', $stringExecutable, 2);
             $executableStruct = $this->buildStringClassMethodCallable($class, $method);
         } else {
@@ -981,18 +1052,34 @@ class Injector implements ServiceContainer
         return $executableStruct;
     }
 
-    private function buildStringClassMethodCallable(object|string $class, string $method): array
+    /**
+     * @throws ReflectionException
+     */
+    private function buildStringClassMethodCallable(string $class, string $method): array
     {
         $relativeStaticMethodStartPos = strpos($method, 'parent::');
 
         if ($relativeStaticMethodStartPos === 0) {
             $childReflection = $this->reflector->getClass($class);
-            $class = $childReflection->getParentClass()->name;
+            $parentReflection = $childReflection->getParentClass();
+            if ($parentReflection === false) {
+                throw InjectionException::fromInvalidCallable(
+                    $this->inProgressMakes,
+                    $class . '::' . $method
+                );
+            }
+            $class = $parentReflection->name;
             $method = substr($method, $relativeStaticMethodStartPos + 8);
         }
 
         [$className, $normalizedClass] = $this->resolveAlias($class);
         $reflectionMethod = $this->reflector->getMethod($className, $method);
+        if (! $reflectionMethod->isPublic()) {
+            throw InjectionException::fromInvalidCallable(
+                $this->inProgressMakes,
+                $class . '::' . $method
+            );
+        }
 
         if ($reflectionMethod->isStatic()) {
             return [$reflectionMethod, null];
@@ -1007,12 +1094,21 @@ class Injector implements ServiceContainer
         return [$reflectionMethod, $instance];
     }
 
+    /**
+     * @throws ReflectionException
+     */
     private function buildExecutableStructFromArray(array $arrayExecutable): array
     {
         [$classOrObj, $method] = $arrayExecutable;
 
         if (is_object($classOrObj) && method_exists($classOrObj, $method)) {
             $callableRefl = $this->reflector->getMethod($classOrObj, $method);
+            if (! $callableRefl->isPublic()) {
+                throw InjectionException::fromInvalidCallable(
+                    $this->inProgressMakes,
+                    $arrayExecutable
+                );
+            }
             $executableStruct = [$callableRefl, $classOrObj];
         } elseif (is_string($classOrObj)) {
             $executableStruct = $this->buildStringClassMethodCallable($classOrObj, $method);

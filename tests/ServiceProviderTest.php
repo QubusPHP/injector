@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Qubus\Injector\Test;
 
 use PHPUnit\Framework\Assert;
@@ -11,7 +13,7 @@ use Qubus\Injector\Test\ServiceProvider\Person;
 
 class ServiceProviderTest extends TestCase
 {
-    public function testFakeServiceProvider()
+    public function testFakeServiceProvider(): void
     {
         $injector = new Injector(InjectorFactory::create([]));
 

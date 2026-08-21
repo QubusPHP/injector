@@ -29,9 +29,82 @@ use Qubus\Injector\Test\Fixture\InjectionChainTestDependency;
 use Qubus\Injector\Test\Fixture\InjectionChainValue;
 use Qubus\Injector\Test\Fixture\ParentWithConstructor;
 use Qubus\Injector\Test\Fixture\ReturnsCallable;
+use Qubus\Injector\Test\Fixture\CallableDelegateClassTest;
+use Qubus\Injector\Test\Fixture\ClassInnerA;
+use Qubus\Injector\Test\Fixture\ClassInnerB;
+use Qubus\Injector\Test\Fixture\ClassOuter;
+use Qubus\Injector\Test\Fixture\ClassWithAliasAsParameter;
+use Qubus\Injector\Test\Fixture\ClassWithCtor;
+use Qubus\Injector\Test\Fixture\ClassWithStaticMethodThatTakesArg;
+use Qubus\Injector\Test\Fixture\ClassWithoutMagicInvoke;
+use Qubus\Injector\Test\Fixture\ConcreteClass1;
+use Qubus\Injector\Test\Fixture\ConcreteClass2;
+use Qubus\Injector\Test\Fixture\ConcreteDependencyWithDefaultValue;
+use Qubus\Injector\Test\Fixture\ConfigClass;
+use Qubus\Injector\Test\Fixture\DelegatableInterface;
+use Qubus\Injector\Test\Fixture\DepImplementation;
+use Qubus\Injector\Test\Fixture\DepInterface;
+use Qubus\Injector\Test\Fixture\DependencyWithDefinedParam;
+use Qubus\Injector\Test\Fixture\DependsOnCyclic;
+use Qubus\Injector\Test\Fixture\ExecuteClassDeps;
+use Qubus\Injector\Test\Fixture\ExecuteClassDepsWithMethodDeps;
+use Qubus\Injector\Test\Fixture\ExecuteClassInvokable;
+use Qubus\Injector\Test\Fixture\ExecuteClassNoDeps;
+use Qubus\Injector\Test\Fixture\ExecuteClassRelativeStaticMethod;
+use Qubus\Injector\Test\Fixture\ExecuteClassStaticMethod;
+use Qubus\Injector\Test\Fixture\HasNonPublicConstructor;
+use Qubus\Injector\Test\Fixture\HasNonPublicConstructorWithArgs;
+use Qubus\Injector\Test\Fixture\ImplementsInterface;
+use Qubus\Injector\Test\Fixture\ImplementsInterfaceFactory;
+use Qubus\Injector\Test\Fixture\InaccessibleExecutableClassMethod;
+use Qubus\Injector\Test\Fixture\InaccessibleStaticExecutableClassMethod;
+use Qubus\Injector\Test\Fixture\InjectorTestChildClass;
+use Qubus\Injector\Test\Fixture\InjectorTestCtorParamWithNoTypehintOrDefault;
+use Qubus\Injector\Test\Fixture\InjectorTestCtorParamWithNoTypehintOrDefaultDependent;
+use Qubus\Injector\Test\Fixture\InjectorTestParentClass;
+use Qubus\Injector\Test\Fixture\InjectorTestRawCtorParams;
+use Qubus\Injector\Test\Fixture\MadeByDelegate;
+use Qubus\Injector\Test\Fixture\NoTypehintNoDefaultConstructorClass;
+use Qubus\Injector\Test\Fixture\NoTypehintNullDefaultConstructorClass;
+use Qubus\Injector\Test\Fixture\NonConcreteDependencyWithDefaultValue;
+use Qubus\Injector\Test\Fixture\NotSharedClass;
+use Qubus\Injector\Test\Fixture\PreparesImplementationTest;
+use Qubus\Injector\Test\Fixture\ProvTestNoDefinitionNullDefaultClass;
+use Qubus\Injector\Test\Fixture\ProviderTestCtorParamWithNoTypehintOrDefault;
+use Qubus\Injector\Test\Fixture\ProviderTestCtorParamWithNoTypehintOrDefaultDependent;
+use Qubus\Injector\Test\Fixture\RecursiveClass1;
+use Qubus\Injector\Test\Fixture\RecursiveClass2;
+use Qubus\Injector\Test\Fixture\RecursiveClassA;
+use Qubus\Injector\Test\Fixture\RecursiveClassB;
+use Qubus\Injector\Test\Fixture\RecursiveClassC;
+use Qubus\Injector\Test\Fixture\RequiresDelegatedInterface;
+use Qubus\Injector\Test\Fixture\RequiresDependencyWithDefinedParam;
+use Qubus\Injector\Test\Fixture\RequiresDependencyWithTypelessParameters;
+use Qubus\Injector\Test\Fixture\RequiresInterface;
+use Qubus\Injector\Test\Fixture\SharedAliasedInterface;
+use Qubus\Injector\Test\Fixture\SharedClass;
+use Qubus\Injector\Test\Fixture\SimpleNoTypehintClass;
+use Qubus\Injector\Test\Fixture\SomeClassName;
+use Qubus\Injector\Test\Fixture\SomeImplementation;
+use Qubus\Injector\Test\Fixture\SomeInterface;
+use Qubus\Injector\Test\Fixture\SpecdTestDependency;
+use Qubus\Injector\Test\Fixture\StringDelegateWithNoInvokeMethod;
+use Qubus\Injector\Test\Fixture\StringStdClassDelegateMock;
+use Qubus\Injector\Test\Fixture\TestClassWithNoCtorTypehints;
+use Qubus\Injector\Test\Fixture\TestDelegationDependency;
+use Qubus\Injector\Test\Fixture\TestDelegationSimple;
+use Qubus\Injector\Test\Fixture\TestDependency;
+use Qubus\Injector\Test\Fixture\TestDependency2;
+use Qubus\Injector\Test\Fixture\TestDependencyWithProtectedConstructor;
+use Qubus\Injector\Test\Fixture\TestMissingDependency;
+use Qubus\Injector\Test\Fixture\TestMultiDepsNeeded;
+use Qubus\Injector\Test\Fixture\TestMultiDepsWithCtor;
+use Qubus\Injector\Test\Fixture\TestNeedsDep;
+use Qubus\Injector\Test\Fixture\TestNeedsDepWithProtCons;
+use Qubus\Injector\Test\Fixture\TestNoConstructor;
+use Qubus\Injector\Test\Fixture\TestNoExplicitDefine;
+use Qubus\Injector\Test\Fixture\TypelessParameterDependency;
 use stdClass;
-use TypeError;
-
 use const PHP_VERSION_ID;
 
 class InjectorTest extends TestCase
@@ -649,7 +722,7 @@ class InjectorTest extends TestCase
 
         // 7 -------------------------------------------------------------------------------------->
 
-        $toInvoke       = 'Qubus\Injector\Test\ExecuteClassStaticMethod::execute';
+        $toInvoke       = 'Qubus\Injector\Test\Fixture\ExecuteClassStaticMethod::execute';
         $args           = [];
         $expectedResult = 42;
         $return[]       = [$toInvoke, $args, $expectedResult];
@@ -696,28 +769,28 @@ class InjectorTest extends TestCase
 
         // 13 ------------------------------------------------------------------------------------->
 
-        $toInvoke       = 'Qubus\Injector\Test\ExecuteClassNoDeps::execute';
+        $toInvoke       = 'Qubus\Injector\Test\Fixture\ExecuteClassNoDeps::execute';
         $args           = [];
         $expectedResult = 42;
         $return[]       = [$toInvoke, $args, $expectedResult];
 
         // 14 ------------------------------------------------------------------------------------->
 
-        $toInvoke       = 'Qubus\Injector\Test\ExecuteClassDeps::execute';
+        $toInvoke       = 'Qubus\Injector\Test\Fixture\ExecuteClassDeps::execute';
         $args           = [];
         $expectedResult = 42;
         $return[]       = [$toInvoke, $args, $expectedResult];
 
         // 15 ------------------------------------------------------------------------------------->
 
-        $toInvoke       = 'Qubus\Injector\Test\ExecuteClassStaticMethod::execute';
+        $toInvoke       = 'Qubus\Injector\Test\Fixture\ExecuteClassStaticMethod::execute';
         $args           = [];
         $expectedResult = 42;
         $return[]       = [$toInvoke, $args, $expectedResult];
 
         // 16 ------------------------------------------------------------------------------------->
 
-        $toInvoke       = 'Qubus\Injector\Test\ExecuteClassRelativeStaticMethod::parent::execute';
+        $toInvoke       = 'Qubus\Injector\Test\Fixture\ExecuteClassRelativeStaticMethod::parent::execute';
         $args           = [];
         $expectedResult = 42;
         $return[]       = [$toInvoke, $args, $expectedResult];
@@ -756,7 +829,7 @@ class InjectorTest extends TestCase
     public function testStaticStringInvokableWithArgument()
     {
         $injector  = new Injector(InjectorFactory::create([]));
-        $invokable = $injector->buildExecutable('Qubus\Injector\Test\ClassWithStaticMethodThatTakesArg::doSomething');
+        $invokable = $injector->buildExecutable('Qubus\Injector\Test\Fixture\ClassWithStaticMethodThatTakesArg::doSomething');
         Assert::assertEquals(42, $invokable(41));
     }
 
@@ -939,7 +1012,7 @@ class InjectorTest extends TestCase
         );
         $class = $injector->make(NonConcreteDependencyWithDefaultValue::class);
         Assert::assertInstanceOf(NonConcreteDependencyWithDefaultValue::class, $class);
-        Assert::assertNotInstanceOf(ImplementsInterface::class, $class->interface);
+        Assert::assertInstanceOf(ImplementsInterface::class, $class->interface);
     }
 
     public function testNonConcreteDependencyWithDefaultValueThroughDelegation()
@@ -951,7 +1024,7 @@ class InjectorTest extends TestCase
         );
         $class = $injector->make(NonConcreteDependencyWithDefaultValue::class);
         Assert::assertInstanceOf(NonConcreteDependencyWithDefaultValue::class, $class);
-        Assert::assertNotInstanceOf(ImplementsInterface::class, $class->interface);
+        Assert::assertInstanceOf(ImplementsInterface::class, $class->interface);
     }
 
     public function testDependencyWithDefaultValueThroughShare()
@@ -965,7 +1038,7 @@ class InjectorTest extends TestCase
         $instance = new stdClass();
         $injector->share($instance);
         $instance = $injector->make(ConcreteDependencyWithDefaultValue::class);
-        Assert::assertNotInstanceOf(stdClass::class, $instance->dependency);
+        Assert::assertInstanceOf(stdClass::class, $instance->dependency);
     }
 
     public function testShareAfterAliasException()
@@ -1256,7 +1329,8 @@ class InjectorTest extends TestCase
 
     public function testDelegationDoesntMakeObject()
     {
-        $this->expectException(TypeError::class);
+        $this->expectException(InjectionException::class);
+        $this->expectExceptionCode(InjectorException::E_MAKING_FAILED);
 
         $delegate = function () {
             return null;
@@ -1326,454 +1400,6 @@ class InjectorTest extends TestCase
     }
 }
 
-interface SharedAliasedInterface
-{
-    public function foo();
-}
-
-interface DepInterface
-{
-}
-
-interface SomeInterface
-{
-}
-
-interface TestNoExplicitDefine
-{
-}
-
-interface DelegatableInterface
-{
-    public function foo();
-}
-
-class ConfigClass
-{
-    //use ConfigTrait;
-
-    public function __construct(Config $config)
-    {
-        //$this->processConfig($config);
-    }
-
-    public function check($key)
-    {
-        //return $this->getConfigKey($key);
-    }
-}
-
-class InaccessibleExecutableClassMethod
-{
-    protected function doSomethingProtected()
-    {
-        return 42;
-    }
-
-    private function doSomethingPrivate()
-    {
-        return 42;
-    }
-}
-
-class InaccessibleStaticExecutableClassMethod
-{
-    protected static function doSomethingProtected()
-    {
-        return 42;
-    }
-
-    private static function doSomethingPrivate()
-    {
-        return 42;
-    }
-}
-
-class ClassWithStaticMethodThatTakesArg
-{
-    public static function doSomething($arg)
-    {
-        return 1 + $arg;
-    }
-}
-
-class RecursiveClass1
-{
-    public function __construct(RecursiveClass2 $dep)
-    {
-    }
-}
-
-class RecursiveClass2
-{
-    public function __construct(RecursiveClass1 $dep)
-    {
-    }
-}
-
-class RecursiveClassA
-{
-    public function __construct(RecursiveClassB $b)
-    {
-    }
-}
-
-class RecursiveClassB
-{
-    public function __construct(RecursiveClassC $c)
-    {
-    }
-}
-
-class RecursiveClassC
-{
-    public function __construct(RecursiveClassA $a)
-    {
-    }
-}
-
-class DependsOnCyclic
-{
-    public function __construct(RecursiveClassA $a)
-    {
-    }
-}
-
-class SharedClass implements SharedAliasedInterface
-{
-    public function foo()
-    {
-    }
-}
-
-class NotSharedClass implements SharedAliasedInterface
-{
-    public function foo()
-    {
-    }
-}
-
-class DependencyWithDefinedParam
-{
-    public $foo;
-
-    public function __construct($foo)
-    {
-        $this->foo = $foo;
-    }
-}
-
-class RequiresDependencyWithDefinedParam
-{
-    public $obj;
-
-    public function __construct(DependencyWithDefinedParam $obj)
-    {
-        $this->obj = $obj;
-    }
-}
-
-class ClassWithAliasAsParameter
-{
-    public $sharedClass;
-
-    public function __construct(SharedClass $sharedClass)
-    {
-        $this->sharedClass = $sharedClass;
-    }
-}
-
-class ConcreteClass1
-{
-}
-
-class ConcreteClass2
-{
-}
-
-class ClassWithoutMagicInvoke
-{
-}
-
-class TestNoConstructor
-{
-}
-
-class TestDependency
-{
-    public $testProp = 'testVal';
-}
-
-class TestDependency2 extends TestDependency
-{
-    public $testProp = 'testVal2';
-}
-
-class SpecdTestDependency extends TestDependency
-{
-    public $testProp = 'testVal';
-}
-
-class TestNeedsDep extends stdClass
-{
-    public function __construct(TestDependency $testDep)
-    {
-        $this->testDep = $testDep;
-    }
-}
-
-class TestClassWithNoCtorTypehints
-{
-    public function __construct($val = 42)
-    {
-        $this->test = $val;
-    }
-}
-
-class TestMultiDepsNeeded
-{
-    public function __construct(TestDependency $val1, TestDependency2 $val2)
-    {
-        $this->testDep = $val1;
-        $this->testDep = $val2;
-    }
-}
-
-class TestMultiDepsWithCtor extends stdClass
-{
-    public function __construct(TestDependency $val1, TestNeedsDep $val2)
-    {
-        $this->testDep = $val1;
-        $this->testDep = $val2;
-    }
-}
-
-class NoTypehintNullDefaultConstructorClass
-{
-    public $testParam = 1;
-
-    public function __construct(TestDependency $val1, $arg = 42)
-    {
-        $this->testParam = $arg;
-    }
-}
-
-class NoTypehintNoDefaultConstructorClass
-{
-    public $testParam = 1;
-
-    public function __construct(TestDependency $val1, $arg = null)
-    {
-        $this->testParam = $arg;
-    }
-}
-
-class SomeImplementation implements SomeInterface
-{
-}
-
-class PreparesImplementationTest implements SomeInterface
-{
-    public $testProp = 0;
-}
-
-class DepImplementation implements DepInterface
-{
-    public $testProp = 'something';
-}
-
-class RequiresInterface extends stdClass
-{
-    public $dep;
-
-    public function __construct(DepInterface $dep)
-    {
-        $this->testDep = $dep;
-    }
-}
-
-class ClassInnerA
-{
-    public $dep;
-
-    public function __construct(ClassInnerB $dep)
-    {
-        $this->dep = $dep;
-    }
-}
-
-class ClassInnerB
-{
-    public function __construct()
-    {
-    }
-}
-
-class ClassOuter
-{
-    public $dep;
-
-    public function __construct(ClassInnerA $dep)
-    {
-        $this->dep = $dep;
-    }
-}
-
-class ProvTestNoDefinitionNullDefaultClass extends stdClass
-{
-    public function __construct($arg = null)
-    {
-        $this->arg = $arg;
-    }
-}
-
-class InjectorTestCtorParamWithNoTypehintOrDefault implements TestNoExplicitDefine
-{
-    public $val = 42;
-
-    public function __construct($val)
-    {
-        $this->val = $val;
-    }
-}
-
-class InjectorTestCtorParamWithNoTypehintOrDefaultDependent
-{
-    private $param;
-
-    public function __construct(TestNoExplicitDefine $param)
-    {
-        $this->param = $param;
-    }
-}
-
-class InjectorTestRawCtorParams
-{
-    public $string;
-    public $obj;
-    public $int;
-    public $array;
-    public $float;
-    public $bool;
-    public $null;
-
-    public function __construct($string, $obj, $int, $array, $float, $bool, $null)
-    {
-        $this->string = $string;
-        $this->obj    = $obj;
-        $this->int    = $int;
-        $this->array  = $array;
-        $this->float  = $float;
-        $this->bool   = $bool;
-        $this->null   = $null;
-    }
-}
-
-class InjectorTestParentClass extends stdClass
-{
-    public function __construct($arg1)
-    {
-        $this->arg1 = $arg1;
-    }
-}
-
-class InjectorTestChildClass extends InjectorTestParentClass
-{
-    public function __construct($arg1, $arg2)
-    {
-        parent::__construct($arg1);
-        $this->arg2 = $arg2;
-    }
-}
-
-class ProviderTestCtorParamWithNoTypehintOrDefault implements TestNoExplicitDefine
-{
-    public $val = 42;
-
-    public function __construct($val)
-    {
-        $this->val = $val;
-    }
-}
-
-class ProviderTestCtorParamWithNoTypehintOrDefaultDependent
-{
-    private $param;
-
-    public function __construct(TestNoExplicitDefine $param)
-    {
-        $this->param = $param;
-    }
-}
-
-class StringStdClassDelegateMock
-{
-    public function __invoke()
-    {
-        return $this->make();
-    }
-
-    private function make()
-    {
-        $obj       = new stdClass();
-        $obj->test = 42;
-
-        return $obj;
-    }
-}
-
-class StringDelegateWithNoInvokeMethod
-{
-}
-
-class ExecuteClassNoDeps
-{
-    public function execute()
-    {
-        return 42;
-    }
-}
-
-class ExecuteClassDeps
-{
-    public function __construct(TestDependency $testDep)
-    {
-    }
-
-    public function execute()
-    {
-        return 42;
-    }
-}
-
-class ExecuteClassDepsWithMethodDeps
-{
-    public function __construct(TestDependency $testDep)
-    {
-    }
-
-    public function execute(TestDependency $dep, $arg = null)
-    {
-        return $arg ?? 42;
-    }
-}
-
-class ExecuteClassStaticMethod
-{
-    public static function execute()
-    {
-        return 42;
-    }
-}
-
-class ExecuteClassRelativeStaticMethod extends ExecuteClassStaticMethod
-{
-    public static function execute()
-    {
-        return 'this should NEVER be seen since we are testing against parent::execute()';
-    }
-}
-
 function testExecuteFunction()
 {
     return 42;
@@ -1782,177 +1408,6 @@ function testExecuteFunction()
 function testExecuteFunctionWithArg(ConcreteClass1 $foo)
 {
     return 42;
-}
-
-class ExecuteClassInvokable
-{
-    public function __invoke()
-    {
-        return 42;
-    }
-}
-
-class MadeByDelegate
-{
-}
-
-class CallableDelegateClassTest
-{
-    public function __invoke()
-    {
-        return new MadeByDelegate();
-    }
-}
-
-class ImplementsInterface implements DelegatableInterface
-{
-    public function foo()
-    {
-    }
-}
-
-class ImplementsInterfaceFactory
-{
-    public function __invoke()
-    {
-        return new ImplementsInterface();
-    }
-}
-
-class RequiresDelegatedInterface
-{
-    private $interface;
-
-    public function __construct(DelegatableInterface $interface)
-    {
-        $this->interface = $interface;
-    }
-
-    public function foo()
-    {
-        $this->interface->foo();
-    }
-}
-
-class TestMissingDependency
-{
-    public function __construct(TypoInTypehint $class)
-    {
-    }
-}
-
-class NonConcreteDependencyWithDefaultValue
-{
-    public $interface;
-
-    public function __construct(?DelegatableInterface $i = null)
-    {
-        $this->interface = $i;
-    }
-}
-
-class ConcreteDependencyWithDefaultValue
-{
-    public $dependency;
-
-    public function __construct(?stdClass $instance = null)
-    {
-        $this->dependency = $instance;
-    }
-}
-
-class TypelessParameterDependency
-{
-    public $thumbnailSize;
-
-    public function __construct($thumbnailSize)
-    {
-        $this->thumbnailSize = $thumbnailSize;
-    }
-}
-
-class RequiresDependencyWithTypelessParameters
-{
-    public $dependency;
-
-    public function __construct(TypelessParameterDependency $dependency)
-    {
-        $this->dependency = $dependency;
-    }
-
-    public function getThumbnailSize()
-    {
-        return $this->dependency->thumbnailSize;
-    }
-}
-
-class HasNonPublicConstructor
-{
-    protected function __construct()
-    {
-    }
-}
-
-class HasNonPublicConstructorWithArgs
-{
-    protected function __construct($arg1, $arg2, $arg3)
-    {
-    }
-}
-
-class ClassWithCtor
-{
-    public function __construct()
-    {
-    }
-}
-
-class TestDependencyWithProtectedConstructor
-{
-    protected function __construct()
-    {
-    }
-
-    public static function create()
-    {
-        return new self();
-    }
-}
-
-class TestNeedsDepWithProtCons extends stdClass
-{
-    public function __construct(TestDependencyWithProtectedConstructor $dep)
-    {
-        $this->dep = $dep;
-    }
-}
-
-class SimpleNoTypehintClass
-{
-    public $testParam = 1;
-
-    public function __construct($arg)
-    {
-        $this->testParam = $arg;
-    }
-}
-
-class SomeClassName
-{
-}
-
-class TestDelegationSimple extends stdClass
-{
-    public $delgateCalled = false;
-}
-
-class TestDelegationDependency extends stdClass
-{
-    public $delgateCalled = false;
-
-    public function __construct(TestDelegationSimple $testDelegationSimple)
-    {
-    }
 }
 
 function createTestDelegationSimple()

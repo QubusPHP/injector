@@ -48,7 +48,7 @@ interface ServiceContainer
     /**
      * Share the specified class/instance across the Injector context
      *
-     * @param mixed $nameOrInstance The class or object to share
+     * @param string|object $nameOrInstance The class or object to share
      * @throws ConfigException If $nameOrInstance is not a string or an object.
      */
     public function share(string|object $nameOrInstance): ServiceContainer;

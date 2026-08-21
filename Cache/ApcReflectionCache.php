@@ -13,14 +13,17 @@ declare(strict_types=1);
 
 namespace Qubus\Injector\Cache;
 
+use function function_exists;
+
 class ApcReflectionCache implements ReflectionCache
 {
-    private ?ArrayReflectionCache $cache = null;
+    private ReflectionCache $cache;
 
     private int $timeToLive = 5;
 
     /**
      * Instantiate an ApcReflectionCache object.
+     *
      */
     public function __construct(?ReflectionCache $cache = null)
     {
@@ -49,6 +52,10 @@ class ApcReflectionCache implements ReflectionCache
      */
     public function fetch(string $key): mixed
     {
+        if (! function_exists('apc_fetch')) {
+            throw new ApcStoreException('The APC extension is required to use ApcReflectionCache.');
+        }
+
         $localData = $this->cache->fetch($key);
 
         if ($localData !== false) {
@@ -69,6 +76,10 @@ class ApcReflectionCache implements ReflectionCache
      */
     public function store(string $key, $data): void
     {
+        if (! function_exists('apc_store')) {
+            throw new ApcStoreException('The APC extension is required to use ApcReflectionCache.');
+        }
+
         $ret = apc_store($key, $data, $this->timeToLive);
         if ($ret === false) {
             throw new ApcStoreException('apc_store failed to cache a variable in the data store.');

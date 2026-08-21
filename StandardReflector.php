@@ -19,11 +19,11 @@ use ReflectionException;
 use ReflectionFunction;
 use ReflectionFunctionAbstract;
 use ReflectionMethod;
+use ReflectionNamedType;
 use ReflectionParameter;
+use ReflectionUnionType;
 
 use function is_string;
-
-use const PHP_VERSION_ID;
 
 class StandardReflector implements Reflector
 {
@@ -63,16 +63,36 @@ class StandardReflector implements Reflector
      */
     public function getParamTypeHint(ReflectionFunctionAbstract $function, ReflectionParameter $param): ?string
     {
-        if (PHP_VERSION_ID >= 80000) {
-            $reflectionClass = $param->getType() ? (string) $param->getType() : null;
-        } else {
-            $reflectionClass = $param->getType();
-            if ($reflectionClass) {
-                $reflectionClass = $reflectionClass->getName();
+        $type = $param->getType();
+        $namedType = $type instanceof ReflectionNamedType ? $type : null;
+
+        if ($type instanceof ReflectionUnionType) {
+            $classTypes = [];
+            foreach ($type->getTypes() as $candidate) {
+                if ($candidate instanceof ReflectionNamedType && ! $candidate->isBuiltin()) {
+                    $classTypes[] = $candidate;
+                }
             }
+
+            $namedType = count($classTypes) === 1 ? $classTypes[0] : null;
         }
 
-        return $reflectionClass ?? null;
+        if ($namedType === null || $namedType->isBuiltin()) {
+            return null;
+        }
+
+        $name = $namedType->getName();
+        if ($function instanceof ReflectionMethod) {
+            $declaringClass = $function->getDeclaringClass();
+            $parentClass = $declaringClass->getParentClass();
+            $name = match ($name) {
+                'self', 'static' => $declaringClass->getName(),
+                'parent' => $parentClass === false ? $name : $parentClass->getName(),
+                default => $name,
+            };
+        }
+
+        return $name;
     }
 
     /**

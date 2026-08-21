@@ -3,6 +3,4 @@
 .phpcs-cache
 composer.lock
 .idea
-index.php
-Orm.php
-User.php
+injection.md

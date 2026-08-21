@@ -18,9 +18,11 @@ interface Config
     /**
      * Returns configuration value. If doesn't exist, return the set default value.
      *
+     * @param string $key
      * @param mixed $default
+     * @return string|array
      */
-    public function get(string $key, $default = null): string|array;
+    public function get(string $key, mixed $default = null): string|array;
 
     /**
      * Checks if key value exists.

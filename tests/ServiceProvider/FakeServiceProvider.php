@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qubus\Injector\Test\ServiceProvider;
 
+use Closure;
 use Qubus\Injector\ServiceProvider\BaseServiceProvider;
 
 class FakeServiceProvider extends BaseServiceProvider
@@ -14,13 +15,28 @@ class FakeServiceProvider extends BaseServiceProvider
             ->define('user.model', [':userName' => new Person('Joseph Smith')]);
     }
 
+    public function booting(Closure $callback): void
+    {
+    }
+
+    public function booted(Closure $callback): void
+    {
+    }
+
+    public function publishes(array $paths, ?string $group = null): void
+    {
+    }
+
+    public function pathsToPublish(?string $tag = null): array
+    {
+        return [];
+    }
+
     public function callBootingCallbacks(): void
     {
-        // TODO: Implement callBootingCallbacks() method.
     }
 
     public function callBootedCallbacks(): void
     {
-
     }
 }

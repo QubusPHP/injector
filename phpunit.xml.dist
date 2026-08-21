@@ -8,7 +8,8 @@
         stopOnFailure="false">
     <testsuites>
         <testsuite name="Injector Test Suite">
-            <directory>tests</directory>
+            <directory suffix="Test.php">tests</directory>
+            <exclude>tests/Fixture</exclude>
         </testsuite>
     </testsuites>
     <source>
@@ -25,6 +26,10 @@
             <file>Injector.php</file>
             <file>InjectorException.php</file>
             <file>InvalidMappingsException.php</file>
+            <file>Reflector.php</file>
+            <file>ServiceContainer.php</file>
+            <file>StandardReflector.php</file>
+            <file>Psr11/NotFoundException.php</file>
         </include>
     </source>
 </phpunit>

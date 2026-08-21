@@ -17,7 +17,7 @@ use function array_key_exists;
 
 class ArrayReflectionCache implements ReflectionCache
 {
-    /** @var array $cache */
+    /** @var array<string, mixed> $cache */
     private array $cache = [];
 
     /**

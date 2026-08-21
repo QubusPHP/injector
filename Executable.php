@@ -15,23 +15,19 @@ namespace Qubus\Injector;
 
 use Closure;
 use Qubus\Exception\Data\TypeException;
+use ReflectionException;
 use ReflectionFunctionAbstract;
 use ReflectionMethod;
 
 use function call_user_func_array;
 use function func_get_args;
 use function is_object;
-use function version_compare;
-
-use const PHP_VERSION;
 
 class Executable
 {
-    /** @var ReflectionFunctionAbstract $callableReflection */
     private ReflectionFunctionAbstract $callableReflection;
 
-    /** @var mixed $invocationObject */
-    private $invocationObject;
+    private ?object $invocationObject = null;
 
     private bool $isInstanceMethod;
 
@@ -41,7 +37,7 @@ class Executable
     public function __construct(ReflectionFunctionAbstract $reflFunc, ?object $invocationObject = null)
     {
         if ($reflFunc instanceof ReflectionMethod) {
-            $this->isInstanceMethod = true;
+            $this->isInstanceMethod = ! $reflFunc->isStatic();
             $this->setMethodCallable($reflFunc, $invocationObject);
         } else {
             $this->isInstanceMethod = false;
@@ -52,13 +48,17 @@ class Executable
     /**
      * @throws TypeException
      */
-    private function setMethodCallable(ReflectionMethod $reflection, ?object $invocationObject): void
+    private function setMethodCallable(ReflectionMethod $reflection, ?object $invocationObject = null): void
     {
-        if (is_object($invocationObject)) {
+        if (! $reflection->isPublic()) {
+            throw new TypeException('ReflectionMethod callables must be public');
+        }
+
+        if ($reflection->isStatic()) {
+            $this->callableReflection = $reflection;
+        } elseif (is_object($invocationObject)) {
             $this->callableReflection = $reflection;
             $this->invocationObject = $invocationObject;
-        } elseif ($reflection->isStatic()) {
-            $this->callableReflection = $reflection;
         } else {
             throw new TypeException(
                 'ReflectionMethod callables must specify an invocation object'
@@ -66,36 +66,33 @@ class Executable
         }
     }
 
+    /**
+     * @throws ReflectionException
+     */
     public function __invoke()
     {
         $args = func_get_args();
         $reflection = $this->callableReflection;
 
-        if ($this->isInstanceMethod) {
+        if ($reflection instanceof ReflectionMethod) {
             return $reflection->invokeArgs($this->invocationObject, $args);
         }
 
-        return $this->callableReflection->isClosure()
-        ? $this->invokeClosureCompat($reflection, $args)
+        return $reflection->isClosure()
+        ? $this->invokeClosure($reflection, $args)
         : $reflection->invokeArgs($args);
     }
 
-    /**
-     * @todo Remove this extra indirection when 5.3 support is dropped
-     */
-    private function invokeClosureCompat($reflection, $args)
+    private function invokeClosure(ReflectionFunctionAbstract $reflection, array $args): mixed
     {
-        if (version_compare(PHP_VERSION, '5.4.0') >= 0) {
-            $scope = $reflection->getClosureScopeClass();
-            $closure = Closure::bind(
-                $reflection->getClosure(),
-                $reflection->getClosureThis(),
-                $scope ? $scope->name : null
-            );
-            return call_user_func_array($closure, $args);
-        } else {
-            return $reflection->invokeArgs($args);
-        }
+        $scope = $reflection->getClosureScopeClass();
+        $closure = Closure::bind(
+            $reflection->getClosure(),
+            $reflection->getClosureThis(),
+            $scope ? $scope->name : null
+        );
+
+        return call_user_func_array($closure ?? $reflection->getClosure(), $args);
     }
 
     public function getCallableReflection(): ReflectionFunctionAbstract

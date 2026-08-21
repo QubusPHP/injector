@@ -17,6 +17,7 @@ use Closure;
 use Qubus\Injector\Reflector;
 use Qubus\Injector\StandardReflector;
 use ReflectionClass;
+use ReflectionException;
 use ReflectionFunction;
 use ReflectionFunctionAbstract;
 use ReflectionMethod;
@@ -34,9 +35,9 @@ class CachingReflector implements Reflector
     public const CACHE_KEY_FUNCS = 'injector.refls.funcs.';
     public const CACHE_KEY_METHODS = 'injector.refls.methods.';
 
-    private ?Reflector $reflector;
+    private Reflector $reflector;
 
-    private ?ReflectionCache $cache;
+    private ReflectionCache $cache;
 
     public function __construct(?Reflector $reflector = null, ?ReflectionCache $cache = null)
     {
@@ -46,12 +47,15 @@ class CachingReflector implements Reflector
 
     /**
      * {@inheritDoc}
+     * @throws ReflectionException
      */
     public function getClass(string|object $class): ReflectionClass
     {
-        $cacheKey = self::CACHE_KEY_CLASSES . strtolower($class);
+        $className = is_string($class) ? $class : $class::class;
+        $cacheKey = self::CACHE_KEY_CLASSES . strtolower($className);
 
-        if (($reflectionClass = $this->cache->fetch($cacheKey)) === false) {
+        $reflectionClass = $this->cache->fetch($cacheKey);
+        if (! $reflectionClass instanceof ReflectionClass) {
             $reflectionClass = $this->reflector->getClass($class);
             $this->cache->store($cacheKey, $reflectionClass);
         }
@@ -61,12 +65,15 @@ class CachingReflector implements Reflector
 
     /**
      * {@inheritDoc}
+     * @throws ReflectionException
      */
     public function getConstructor(string|object $class): ?ReflectionMethod
     {
-        $cacheKey = self::CACHE_KEY_CTORS . strtolower($class);
+        $className = is_string($class) ? $class : $class::class;
+        $cacheKey = self::CACHE_KEY_CTORS . strtolower($className);
 
-        if (($reflectedConstructor = $this->cache->fetch($cacheKey)) === false) {
+        $reflectedConstructor = $this->cache->fetch($cacheKey);
+        if ($reflectedConstructor !== null && ! $reflectedConstructor instanceof ReflectionMethod) {
             $reflectedConstructor = $this->reflector->getConstructor($class);
             $this->cache->store($cacheKey, $reflectedConstructor);
         }
@@ -76,12 +83,15 @@ class CachingReflector implements Reflector
 
     /**
      * {@inheritDoc}
+     * @throws ReflectionException
      */
     public function getConstructorParams(string|object $class)
     {
-        $cacheKey = self::CACHE_KEY_CTOR_PARAMS . strtolower($class);
+        $className = is_string($class) ? $class : $class::class;
+        $cacheKey = self::CACHE_KEY_CTOR_PARAMS . strtolower($className);
 
-        if (($reflectedConstructorParams = $this->cache->fetch($cacheKey)) === false) {
+        $reflectedConstructorParams = $this->cache->fetch($cacheKey);
+        if (! is_array($reflectedConstructorParams) && $reflectedConstructorParams !== null) {
             $reflectedConstructorParams = $this->reflector->getConstructorParams($class);
             $this->cache->store($cacheKey, $reflectedConstructorParams);
         }
@@ -102,14 +112,14 @@ class CachingReflector implements Reflector
             $paramCacheKey = self::CACHE_KEY_CLASSES . "{$lowClass}.{$lowMethod}.param-{$lowParam}";
         } else {
             $lowFunc = strtolower($function->name);
-            $paramCacheKey = strpos($lowFunc, '{closure}') === false
+            $paramCacheKey = !str_contains($lowFunc, '{closure}')
             ? self::CACHE_KEY_FUNCS . ".{$lowFunc}.param-{$lowParam}"
             : null;
         }
 
         $typeHint = $paramCacheKey === null ? false : $this->cache->fetch($paramCacheKey);
 
-        if (false === $typeHint) {
+        if (! is_string($typeHint) && $typeHint !== null) {
             $typeHint = $this->reflector->getParamTypeHint($function, $param);
             if ($paramCacheKey !== null) {
                 $this->cache->store($paramCacheKey, $typeHint);
@@ -121,13 +131,19 @@ class CachingReflector implements Reflector
 
     /**
      * {@inheritDoc}
+     * @throws ReflectionException
      */
     public function getFunction(string|Closure $functionName): ReflectionFunction
     {
+        if ($functionName instanceof Closure) {
+            return $this->reflector->getFunction($functionName);
+        }
+
         $lowFunc = strtolower($functionName);
         $cacheKey = self::CACHE_KEY_FUNCS . $lowFunc;
 
-        if (($reflectedFunc = $this->cache->fetch($cacheKey)) === false) {
+        $reflectedFunc = $this->cache->fetch($cacheKey);
+        if (! $reflectedFunc instanceof ReflectionFunction) {
             $reflectedFunc = $this->reflector->getFunction($functionName);
             $this->cache->store($cacheKey, $reflectedFunc);
         }
@@ -137,6 +153,7 @@ class CachingReflector implements Reflector
 
     /**
      * {@inheritDoc}
+     * @throws ReflectionException
      */
     public function getMethod(string|object $classNameOrInstance, string $methodName): ReflectionMethod
     {
@@ -146,7 +163,8 @@ class CachingReflector implements Reflector
 
         $cacheKey = self::CACHE_KEY_METHODS . strtolower($className) . '.' . strtolower($methodName);
 
-        if (($reflectedMethod = $this->cache->fetch($cacheKey)) === false) {
+        $reflectedMethod = $this->cache->fetch($cacheKey);
+        if (! $reflectedMethod instanceof ReflectionMethod) {
             $reflectedMethod = $this->reflector->getMethod($classNameOrInstance, $methodName);
             $this->cache->store($cacheKey, $reflectedMethod);
         }

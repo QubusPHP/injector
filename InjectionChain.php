@@ -13,12 +13,9 @@ declare(strict_types=1);
 
 namespace Qubus\Injector;
 
-use RuntimeException;
-
 use function array_flip;
 use function array_pop;
 use function count;
-use function is_numeric;
 
 class InjectionChain
 {
@@ -63,16 +60,9 @@ class InjectionChain
      *
      * @param int $index Element index to retrieve. Negative value to fetch from the end of the chain.
      * @return string|false Class name of the element at the specified index. False if index not found.
-     * @throws RuntimeException If the index is not a numeric value.
      */
     public function getByIndex(int $index): false|string
     {
-        if (! is_numeric($index)) {
-            throw new RuntimeException('Index needs to be a numeric value.');
-        }
-
-        $index = (int) $index;
-
         if ($index < 0) {
             $index += count($this->chain);
         }

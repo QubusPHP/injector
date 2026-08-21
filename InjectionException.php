@@ -60,7 +60,7 @@ class InjectionException extends RuntimeException implements InjectorException
         } elseif (
             is_array($callableOrMethodStr) &&
             array_key_exists(0, $callableOrMethodStr) &&
-            array_key_exists(0, $callableOrMethodStr)
+            array_key_exists(1, $callableOrMethodStr)
         ) {
             if (is_string($callableOrMethodStr[0]) && is_string($callableOrMethodStr[1])) {
                 $callableString .= $callableOrMethodStr[0] . '::' . $callableOrMethodStr[1];

@@ -14,11 +14,13 @@ declare(strict_types=1);
 namespace Qubus\Injector\Config;
 
 use ArrayObject;
+use JsonException;
 use Traversable;
 
 use function array_key_exists;
 use function array_replace_recursive;
 use function explode;
+use function is_array;
 use function is_int;
 use function iterator_to_array;
 use function json_encode;
@@ -29,12 +31,6 @@ class InjectorConfig extends ArrayObject implements Config
 {
     /** @var array $storage */
     private array $storage = [];
-
-    /** @var array $temp */
-    private array $temp = [];
-
-    /** @var mixed */
-    private $default;
 
     /**
      * Array key level delimiter.
@@ -61,16 +57,9 @@ class InjectorConfig extends ArrayObject implements Config
     /**
      * {@inheritDoc}
      */
-    public function get(string $key, $default = null): string|array
+    public function get(string $key, mixed $default = null): string|array
     {
-        $this->default = $default;
-
-        if (! $this->has($key)) {
-            return $default;
-        }
-
-        // The class::temp variable is always set by the class::has() method
-        return $this->temp;
+        return $this->search($this->storage, $key, $default);
     }
 
     /**
@@ -78,14 +67,17 @@ class InjectorConfig extends ArrayObject implements Config
      */
     public function has(string $key): bool
     {
-        $this->temp = $this->search($this->storage, $key, $this->default);
-        $this->default = null;
-        return isset($this->temp);
+        $missing = new \stdClass();
+        return $this->search($this->storage, $key, $missing) !== $missing;
     }
 
     public function add($key, $value): InjectorConfig
     {
-        $this->storage[ $key ] = $value;
+        if ($key === null) {
+            $this->storage[] = $value;
+        } else {
+            $this->storage[$key] = $value;
+        }
         parent::exchangeArray($this->storage);
         return $this;
     }
@@ -123,14 +115,17 @@ class InjectorConfig extends ArrayObject implements Config
         return iterator_to_array($this);
     }
 
+    /**
+     * @throws JsonException
+     */
     public function toJson(): string
     {
-        return strval(json_encode($this->toArray()));
+        return json_encode($this->toArray(), JSON_THROW_ON_ERROR);
     }
 
     public function __clone()
     {
-        $this->storage = [];
+        $this->storage = $this->getArrayCopy();
         parent::exchangeArray($this->storage);
     }
 
@@ -148,14 +143,14 @@ class InjectorConfig extends ArrayObject implements Config
 
         $levels = (array) explode(self::$delimiter, $key);
         foreach ($levels as $level) {
-            if (! array_key_exists(strval($level), $array)) {
+            if (! is_array($array) || ! array_key_exists(strval($level), $array)) {
                 return $default;
             }
 
             $array = $array[ $level ];
         }
 
-        return $array ?? $default;
+        return $array;
     }
 
     /**
@@ -171,7 +166,9 @@ class InjectorConfig extends ArrayObject implements Config
      */
     public function offsetExists(mixed $index): bool
     {
-        return $this->has($index);
+        $missing = new \stdClass();
+
+        return $this->search($this->storage, $index, $missing) !== $missing;
     }
 
     /**
@@ -179,7 +176,7 @@ class InjectorConfig extends ArrayObject implements Config
      */
     public function offsetGet(mixed $index): mixed
     {
-        return $this->get($index);
+        return $this->search($this->storage, $index);
     }
 
     /**
